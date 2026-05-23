@@ -15,14 +15,18 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
     async function fetchNames() {
       try {
         setLoading(true);
+        // ⚡ RÉPARATION CRITIQUE : Réinitialisation systématique de la liste et de l'index
+        // Cela force le composant à se vider avant de recevoir la réponse (cohérente ou non) de FastAPI
+        setNames([]);
+        setCurrentIndex(0);
+
         const response = await fetch('http://127.0.0.1:8000/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: config.prompt,
-            // ⚡ RÉPARATION : On envoie dynamiquement le vrai style choisi (config.style) au lieu de bloquer sur 'Luxe'
             secteur: config.style, 
-            langue: lang, // Récupère dynamiquement 'fr' ou 'ar' du Context global
+            langue: lang, 
             n: 30,
             temperature: 0.7,
             top_k: 10,
@@ -31,7 +35,6 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
         });
         const data = await response.json();
         setNames(data.noms || []);
-        setCurrentIndex(0);
       } catch (error) {
         console.error("Erreur backend:", error);
       } finally {
@@ -49,7 +52,6 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
     if (currentIndex >= names.length) return;
 
     if (type === 'like' || type === 'save') {
-      // ⚡ SUIVI : On s'assure que l'objet enregistré possède le style sélectionné pour l'exportation et le tiroir
       const cardWithStyle = {
         ...currentCard,
         style: currentCard?.style || config.style,
@@ -58,7 +60,6 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
       addFavorite(cardWithStyle);
     }
 
-    // Déclenchement de la classe d'animation CSS
     if (type === 'pass') setAnimation('animate-swipe-left');
     if (type === 'like') setAnimation('animate-swipe-right');
     if (type === 'save') setAnimation('animate-bounce-up');
@@ -66,7 +67,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
     setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
       setAnimation('');
-    }, 450); // Temps aligné sur la transition CSS
+    }, 450);
   };
 
   // ÉCRAN DE CHARGEMENT SQUELETTE
@@ -75,6 +76,31 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center text-gray-400 gap-4">
         <Loader2 className="animate-spin text-purple-600" size={40} />
         <p className="text-sm font-medium tracking-wide">BrandForge calcule vos noms sur mesure...</p>
+      </div>
+    );
+  }
+
+  // ⚡ ÉCRAN DE GESTION DU TEXTE INCOHÉRENT (Fonctionne à chaque itération grâce au nettoyage d'état)
+  if (!loading && names.length === 0) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
+        <div className="p-8 bg-[#12141c] rounded-3xl border border-gray-900 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 animate-fade-in">
+          <span className="text-4xl">🤔</span>
+          <h3 className="text-xl font-bold tracking-wide">
+            {lang === 'ar' ? 'وصف غير مفهوم' : 'Concept non reconnu'}
+          </h3>
+          <p className="text-gray-500 text-xs leading-relaxed">
+            {lang === 'ar' 
+              ? 'يبدو أن الوصف الذي أدخلته غير واضح أو عشوائي. يرجى كتابة كلمات رئيسية مفهومة (مثال: شركة تقنية حديثة، مشروع فاخر).' 
+              : 'Votre description semble incohérente ou contient du texte aléatoire. Essayez d\'ajouter des mots-clés clairs (ex: "startup tech moderne", "luxe durable").'}
+          </p>
+          <button 
+            onClick={onGoBack} 
+            className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 font-bold text-white rounded-xl text-xs transition-all active:scale-95 shadow-lg shadow-purple-950/20"
+          >
+            {lang === 'ar' ? 'تعديل الوصف ×' : 'Modifier mon prompt'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -89,7 +115,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
           <span>{remainingCount} {t('remaining')}</span>
         </button>
         <button 
-          onClick={() => { setCurrentIndex(0); }} // Reset pour la démo ou réappel
+          onClick={() => { setCurrentIndex(0); }} 
           className="p-2 bg-[#12141c] hover:text-white rounded-full border border-gray-950 transition-all"
         >
           <RotateCcw size={14} />
@@ -99,7 +125,6 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
       {/* COMPOSANT DE VUE DE CARTE */}
       <div className="flex-1 flex items-center justify-center my-6 relative w-full">
         {currentIndex < names.length ? (
-          // ⚡ RÉPARATION : Envoi de la configuration globale (avec config.style) au composant BrandCard
           <BrandCard 
             data={currentCard} 
             animationClass={animation} 
@@ -115,7 +140,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
         )}
       </div>
 
-      {/* LÉGENDES INDICATIVES DES DESIGN GUIDELINES */}
+      {/* LÉGENDES INDICATIVES */}
       {currentIndex < names.length && (
         <div className="text-center text-gray-600 text-[11px] font-medium tracking-wide flex justify-center gap-8 mb-4">
           <span className="flex items-center gap-1.5"><X size={12} className="text-red-500/50" /> {t('swipeLeft')}</span>
@@ -123,7 +148,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
         </div>
       )}
 
-      {/* BARRE D'ACTIONS INFÉRIEURE AVEC LES 3 BOUTONS RONDS */}
+      {/* BARRE D'ACTIONS INFÉRIEURE */}
       <div className="w-full flex justify-center items-center gap-5 pb-6">
         <button
           disabled={currentIndex >= names.length}
