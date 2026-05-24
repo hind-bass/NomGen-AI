@@ -5,23 +5,27 @@ from app.models.schemas import GenerateRequest, GenerateResponse
 from app.services.nomgen_core import NomGenService
 
 router  = APIRouter()
-service = NomGenService()   # chargé une seule fois au démarrage
+service = NomGenService()
 
 
-#  NOUVEAUTÉ : FONCTION DE VALIDATION DU PROMPT (Détection de Charabia / Gibberish)
 def est_un_prompt_incoherent(prompt: str) -> bool:
+    """
+    Retourne True uniquement si le prompt est clairement inutilisable.
+
+    Règles :
+      1. Vide ou quasi-vide (< 3 caractères après strip)
+      2. Frappe aléatoire continue : aucun espace ET plus de 15 chars
+         ex: "jdhfkjhdfkjhdf" → incohérent
+      3. Aucune lettre latine ni arabe (uniquement chiffres/symboles)
+    """
     text = prompt.strip()
-    
-    # 1. Si le prompt est vide ou trop court pour avoir du sens
-    if len(text) < 100:
+
+    if len(text) < 3:
         return True
-        
-    # 2. Détection de frappes aléatoires continues (ex: "jhdkjhfkdh")
-    # Si le texte ne contient aucun espace et dépasse 8 caractères, c'est incohérent
-    if " " not in text and len(text) > 8:
+
+    if " " not in text and len(text) > 15:
         return True
-        
-    # 3. Vérification de la présence minimale de caractères (lettres FR ou AR)
+
     has_letters = bool(re.search(r'[a-zA-Z\u0600-\u06FF]', text))
     if not has_letters:
         return True
@@ -33,8 +37,7 @@ def est_un_prompt_incoherent(prompt: str) -> bool:
 async def generate_names(req: GenerateRequest):
     try:
         t0 = time.time()
-        
-        # ⚡ SÉCURITÉ : Si le prompt est du charabia, on court-circuite le service NomGenService
+
         if est_un_prompt_incoherent(req.prompt):
             return GenerateResponse(
                 noms=[],
@@ -42,11 +45,15 @@ async def generate_names(req: GenerateRequest):
                 duree_ms=round((time.time() - t0) * 1000, 1),
             )
 
-        # Logique classique si le prompt est valide
         result = service.generate(
-            prompt=req.prompt, secteur=req.secteur, langue=req.langue,
-            n=req.n, temperature=req.temperature,
-            top_k=req.top_k, seed=req.seed,
+            prompt=req.prompt,
+            secteur=req.secteur,
+            generation_type=req.generation_type,
+            langue=req.langue,
+            n=req.n,
+            temperature=req.temperature,
+            top_k=req.top_k,
+            seed=req.seed,
         )
         return GenerateResponse(
             noms=result["noms"],

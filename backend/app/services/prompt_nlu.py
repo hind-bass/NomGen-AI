@@ -1,5 +1,5 @@
 """Interpréteur de prompt utilisateur → tokens de contrôle."""
-
+# à améliorer (pas de détection langue)
 KEYWORD_MAP = {
     "#L": ["luxe","luxueux","haut de gamme","premium","prestige","mode","fashion",
            "couture","bijou","joaillerie","parfum","beaute","elegance"],

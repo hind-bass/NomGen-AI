@@ -1,6 +1,18 @@
 import { useState, useCallback } from "react";
 import { generateNames } from "../api/nomgenApi";
 
+/**
+ * Hook de génération de noms.
+ * Utilisé par Generator.jsx (vue liste) ET CardsScreen.jsx (vue swipe).
+ *
+ * Retourne :
+ *   results   — tableau de GeneratedName [{nom, score, langue, secteur, type}]
+ *   loading   — booléen
+ *   error     — message d'erreur ou null
+ *   duration  — temps de génération en ms (null si pas encore généré)
+ *   generate  — fonction (params) => Promise
+ *   clear     — remet les résultats à zéro
+ */
 export function useGenerator() {
   const [results,  setResults]  = useState([]);
   const [loading,  setLoading]  = useState(false);
@@ -12,15 +24,26 @@ export function useGenerator() {
     setError(null);
     try {
       const data = await generateNames(params);
-      setResults(data.noms);
-      setDuration(data.duree_ms);
+      setResults(data.noms ?? []);
+      setDuration(data.duree_ms ?? null);
     } catch (err) {
-      setError(err.response?.data?.detail || "Erreur de connexion au backend");
+      // Distinguer erreur réseau (backend éteint) et erreur applicative
+      if (!err.response) {
+        setError("Impossible de joindre le backend. Vérifiez que le serveur tourne sur le port 8000.");
+      } else {
+        setError(err.response?.data?.detail || "Erreur lors de la génération.");
+      }
+      setResults([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const clear = () => { setResults([]); setError(null); setDuration(null); };
+  const clear = useCallback(() => {
+    setResults([]);
+    setError(null);
+    setDuration(null);
+  }, []);
+
   return { results, loading, error, duration, generate, clear };
 }
