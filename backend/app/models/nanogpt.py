@@ -1,5 +1,5 @@
 """
-Architecture nanoGPT — partagée entre les notebooks et le backend.
+Architecture nanoGPT
 Inspirée de Karpathy 'Let's build GPT' (2022).
 Optimisée pour la génération conditionnelle de noms de marques.
 """

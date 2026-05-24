@@ -3,13 +3,14 @@ from typing import Optional, List
 
 
 class GenerateRequest(BaseModel):
-    prompt:      Optional[str]   = ""
-    secteur:     Optional[str]   = "LUXE"
-    langue:      str             = "fr"
-    n:           int             = Field(10, ge=1, le=50)
-    temperature: float           = Field(1.0, ge=0.1, le=2.5)
-    top_k:       int             = Field(20, ge=1, le=100)
-    seed:        Optional[int]   = None
+    prompt:          Optional[str]   = ""
+    secteur:         Optional[str]   = "general"
+    generation_type: Optional[str]   = "marque"   
+    langue:          str             = "fr"
+    n:               int             = Field(10, ge=1, le=50)
+    temperature:     float           = Field(1.0, ge=0.1, le=2.5)
+    top_k:           int             = Field(20, ge=1, le=100)
+    seed:            Optional[int]   = None
 
 
 class GeneratedName(BaseModel):
@@ -17,6 +18,7 @@ class GeneratedName(BaseModel):
     score:   float
     langue:  str
     secteur: str
+    type:    Optional[str] = "marque"   
 
 
 class GenerateResponse(BaseModel):
