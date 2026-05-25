@@ -13,16 +13,16 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
   // ── Déclenchement automatique — PAS de setState synchrone ici ────────────
   useEffect(() => {
     generate({
-      prompt:         config.prompt,
-      style:          config.style,
-      generationType: generationType,
-      langue:         lang,
-      n:              30,
-      temperature:    0.7,
-      topK:           10,
+      prompt:      config.prompt,
+      type:        config.type,
+      category:    config.category,
+      langue:      lang,
+      n:           30,
+      temperature: 0.7,
+      topK:        10,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config, lang, generationType]);
+  }, [config, lang]);
 
   const currentCard    = results[currentIndex];
   const remainingCount = results.length - currentIndex;
@@ -34,20 +34,18 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
     if (type === 'like' || type === 'save') {
       const cardWithMeta = {
         ...currentCard,
-        style:   currentCard?.style   || config.style,
-        secteur: currentCard?.secteur || config.style,
+        type:     currentCard?.type     || config.type,
+        category: currentCard?.category || config.category,
       };
       addFavorite(cardWithMeta);
     }
 
     const animMap = { pass: 'animate-swipe-left', like: 'animate-swipe-right', save: 'animate-bounce-up' };
 
-    // Applique l'animation via la carte directement
     setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
     }, 450);
 
-    // On passe l'animation à la carte via une ref locale (voir BrandCard)
     const card = document.querySelector('.brand-card-active');
     if (card && animMap[type]) {
       card.classList.add(animMap[type]);
@@ -57,13 +55,13 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
   // ── Régénérer ─────────────────────────────────────────────────────────────
   const handleRegen = () => {
     generate({
-      prompt:         config.prompt,
-      style:          config.style,
-      generationType: generationType,
-      langue:         lang,
-      n:              30,
-      temperature:    0.9,
-      topK:           15,
+      prompt:      config.prompt,
+      type:        config.type,
+      category:    config.category,
+      langue:      lang,
+      n:           30,
+      temperature: 0.9,
+      topK:        15,
     });
   };
 

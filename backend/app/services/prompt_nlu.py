@@ -147,6 +147,10 @@ def _score_secteurs(text_lower: str) -> tuple[str, float, list[str]]:
         scores[sect]    = len(hits)
         hits_map[sect]  = hits
 
+    # Si aucun keyword trouvé, retourner "general" directement
+    if all(s == 0 for s in scores.values()):
+        return "general", 0.0, []
+
     # "general" ne gagne que s'il a strictement plus de hits (évite le fallback abusif)
     best = max(
         scores,
@@ -155,9 +159,16 @@ def _score_secteurs(text_lower: str) -> tuple[str, float, list[str]]:
     best_score = scores[best]
     found      = hits_map[best]
 
-    # Normalisation : max ≈ 20 mots-clés → confiance plafonnée à 1.0
-    max_kw     = max(len(v) for v in SECTEUR_KEYWORDS.values())
-    confidence = min(best_score / max(max_kw / 4, 1), 1.0)
+    # Normalisation améliorée : plus sensible aux keywords importants
+    # Min 0.5 si au moins 1 keyword trouvé (sauf "general")
+    # Max 1.0 avec assez de keywords
+    if best_score == 0:
+        confidence = 0.0
+    elif best == "general":
+        confidence = min(best_score / 8, 1.0)  # Plus strict pour "general"
+    else:
+        # Pour secteurs spécialisés : min 0.5 avec 1 keyword, monte vers 1.0
+        confidence = min(0.5 + (best_score / 6), 1.0)
 
     return best, round(confidence, 2), found
 

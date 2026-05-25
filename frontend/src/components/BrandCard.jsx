@@ -21,7 +21,7 @@ export default function BrandCard({ data, animationClass, index, config }) {
 
   // ⚡ LOGIQUE SÉCURISÉE DE TRADUCTION DU STYLE
   // Récupère la valeur brute du style (depuis l'élément ou la configuration globale)
-  const rawStyle = data.style || data.secteur || config?.style || "tech";
+  const rawStyle = data.category || data.style || data.secteur || config?.category || config?.style || "tech";
   // Nettoie et traduit la valeur de manière dynamique
   const translatedStyle = t(rawStyle.toLowerCase().trim());
 

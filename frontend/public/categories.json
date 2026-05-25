@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "categories": {
+    "marque": {
+      "label_fr": "Noms de marque",
+      "label_ar": "أسماء علامات تجارية",
+      "icon": "Tag",
+      "sectors": [
+        {
+          "id": "general",
+          "label_fr": "Tout",
+          "label_ar": "الكل",
+          "description_fr": "Noms polyvalents pour tous les produits"
+        },
+        {
+          "id": "luxe",
+          "label_fr": "Luxe",
+          "label_ar": "فاخر",
+          "description_fr": "Noms élégants et premium"
+        },
+        {
+          "id": "tech",
+          "label_fr": "Tech",
+          "label_ar": "تقني",
+          "description_fr": "Noms innovants et modernes"
+        },
+        {
+          "id": "food",
+          "label_fr": "Food",
+          "label_ar": "غذاء",
+          "description_fr": "Noms appétissants et mémorables"
+        }
+      ]
+    },
+    "societe": {
+      "label_fr": "Noms d'entreprise",
+      "label_ar": "أسماء شركات",
+      "icon": "Building2",
+      "sectors": [
+        {
+          "id": "general",
+          "label_fr": "Tout",
+          "label_ar": "الكل",
+          "description_fr": "Noms polyvalents pour tous les secteurs"
+        },
+        {
+          "id": "tech",
+          "label_fr": "Tech",
+          "label_ar": "تقني",
+          "description_fr": "Noms innovants pour startups tech"
+        },
+        {
+          "id": "services",
+          "label_fr": "Services",
+          "label_ar": "خدمات",
+          "description_fr": "Noms professionnels pour services"
+        },
+        {
+          "id": "industrie",
+          "label_fr": "Industrie",
+          "label_ar": "صناعة",
+          "description_fr": "Noms robustes pour l'industrie"
+        }
+      ]
+    }
+  },
+  "languages": ["fr", "ar"]
+}

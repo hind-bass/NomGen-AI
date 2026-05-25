@@ -36,7 +36,12 @@ const translations = {
     "Futuriste": "Futuriste",
     "Luxe": "Luxe",
     "Tech": "Tech",
-    "Minimal": "Minimal"
+    "Minimal": "Minimal",
+    // Nouvelles catégories
+    "general": "Tout",
+    "food": "Food",
+    "services": "Services",
+    "industrie": "Industrie"
   },
   ar: {
     title: "سمِّ رؤيتك",
@@ -70,13 +75,33 @@ const translations = {
     "Futuriste": "مستقبلي",
     "Luxe": "فاخر",
     "Tech": "تقني",
-    "Minimal": "بسيط"
+    "Minimal": "بسيط",
+    // Nouvelles catégories
+    "general": "الكل",
+    "food": "غذاء",
+    "services": "خدمات",
+    "industrie": "صناعة"
   }
 };
 
 export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState('fr');
   const [favorites, setFavorites] = useState([]);
+  const [categories, setCategories] = useState(null);
+
+  // Load categories config
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetch('/categories.json');
+        const data = await res.json();
+        setCategories(data);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   // Inversion automatique du sens de lecture de la page (RTL / LTR)
   useEffect(() => {
@@ -130,15 +155,16 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ 
-      lang, 
-      setLang, 
-      t, 
-      favorites, 
-      addFavorite, 
-      removeFavorite, 
-      exportToCSV, 
-      exportToJSON
+    <AppContext.Provider value={{
+      lang,
+      setLang,
+      t,
+      favorites,
+      addFavorite,
+      removeFavorite,
+      exportToCSV,
+      exportToJSON,
+      categories
     }}>
       {children}
     </AppContext.Provider>

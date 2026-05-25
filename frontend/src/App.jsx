@@ -1,27 +1,41 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import MainSelection from './components/MainSelection';
+import { CategorySelector } from './components/CategorySelector';
 import PromptScreen from './components/PromptScreen';
 import CardsScreen from './components/CardsScreen';
-import { useApp } from './context/AppContext'; // Importation du contexte global
+import { useApp } from './context/AppContext';
 
 export default function App() {
-  const [screen, setScreen] = useState('home'); // 'home', 'prompt', 'cards'
+  const [screen, setScreen] = useState('home');
   const [generationType, setGenerationType] = useState(null);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
-  const [config, setConfig] = useState({ prompt: '', style: 'Tous' });
+  const [config, setConfig] = useState({
+    prompt: '',
+    type: null,
+    category: null
+  });
 
-  // Extraction des variables et fonctions depuis le Context global
   const { lang, t, favorites, exportToCSV, exportToJSON } = useApp();
 
   const handleSelectMode = (type) => {
     setGenerationType(type);
+    setConfig(prev => ({ ...prev, type }));
+    setScreen('category');
+  };
+
+  const handleSelectCategory = (type, category) => {
+    if (!type || !category) {
+      setScreen('home');
+      return;
+    }
+    setConfig(prev => ({ ...prev, type, category }));
     setScreen('prompt');
   };
 
   const handleGenerate = (data) => {
-    setConfig(data);
-    setScreen('cards'); 
+    setConfig(prev => ({ ...prev, ...data }));
+    setScreen('cards');
   };
 
   return (
@@ -33,11 +47,21 @@ export default function App() {
         <MainSelection onSelectMode={handleSelectMode} />
       )}
 
+      {screen === 'category' && generationType && (
+        <div className="animate-fade-in">
+          <CategorySelector
+            type={generationType}
+            onSelectCategory={handleSelectCategory}
+          />
+        </div>
+      )}
+
       {screen === 'prompt' && (
         <div className="animate-fade-in">
-          <PromptScreen 
+          <PromptScreen
             generationType={generationType}
-            onGoBack={() => setScreen('home')}
+            category={config.category}
+            onGoBack={() => setScreen('category')}
             onGenerate={handleGenerate}
           />
         </div>

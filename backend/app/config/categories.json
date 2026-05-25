@@ -1,0 +1,134 @@
+{
+  "version": "1.0",
+  "categories": {
+    "marque": {
+      "label_fr": "Noms de marque",
+      "label_ar": "أسماء علامات تجارية",
+      "icon": "Tag",
+      "description_fr": "Produits, collections, identités",
+      "description_ar": "منتجات، مجموعات، هويات",
+      "sectors": [
+        {
+          "id": "general",
+          "label_fr": "Tout",
+          "label_ar": "الكل",
+          "keywords_fr": ["marque", "produit", "collection"],
+          "keywords_ar": ["منتج", "علامة"],
+          "modelPath": "model_fr_marque_general.pt",
+          "vocabPath": "vocab_fr_marque_general.json",
+          "dataPath": "marque_general.txt",
+          "promptHint": "Create a brand name for a generic product",
+          "tempOverride": 1.1,
+          "topKOverride": 25
+        },
+        {
+          "id": "luxe",
+          "label_fr": "Luxe",
+          "label_ar": "فاخر",
+          "keywords_fr": ["luxe", "premium", "fashion", "elegant"],
+          "keywords_ar": ["فاخر", "راقي", "فخامة"],
+          "modelPath": "model_fr_marque_luxe.pt",
+          "vocabPath": "vocab_fr_marque_luxe.json",
+          "dataPath": "marque_luxe.txt",
+          "promptHint": "Create a premium, elegant luxury brand name",
+          "tempOverride": 1.2,
+          "topKOverride": 35,
+          "constraintToken": "#{LUXURY}#{PREMIUM}#"
+        },
+        {
+          "id": "tech",
+          "label_fr": "Tech",
+          "label_ar": "تقني",
+          "keywords_fr": ["tech", "digital", "innovation", "software"],
+          "keywords_ar": ["تقنية", "ابتكار", "رقمي"],
+          "modelPath": "model_fr_marque_tech.pt",
+          "vocabPath": "vocab_fr_marque_tech.json",
+          "dataPath": "marque_tech.txt",
+          "promptHint": "Create an innovative, tech-forward brand name",
+          "tempOverride": 1.0,
+          "topKOverride": 25,
+          "constraintToken": "#{INNOVATION}#{DIGITAL}#"
+        },
+        {
+          "id": "food",
+          "label_fr": "Food",
+          "label_ar": "غذاء",
+          "keywords_fr": ["food", "cuisine", "gastronomie", "restaurant"],
+          "keywords_ar": ["غذاء", "طعام", "طهي"],
+          "modelPath": "model_fr_marque_food.pt",
+          "vocabPath": "vocab_fr_marque_food.json",
+          "dataPath": "marque_food.txt",
+          "promptHint": "Create a memorable food brand name",
+          "tempOverride": 1.3,
+          "topKOverride": 40,
+          "constraintToken": "#{APPETITE}#{SAVOR}#"
+        }
+      ]
+    },
+    "societe": {
+      "label_fr": "Noms d'entreprise",
+      "label_ar": "أسماء شركات",
+      "icon": "Building2",
+      "description_fr": "Startups, agences, sociétés",
+      "description_ar": "شركات ناشئة، وكالات، مؤسسات",
+      "sectors": [
+        {
+          "id": "general",
+          "label_fr": "Tout",
+          "label_ar": "الكل",
+          "keywords_fr": ["entreprise", "société", "business", "company"],
+          "keywords_ar": ["شركة", "مؤسسة", "عمل"],
+          "modelPath": "model_fr_societe_general.pt",
+          "vocabPath": "vocab_fr_societe_general.json",
+          "dataPath": "societe_general.txt",
+          "promptHint": "Create a business name for a general company",
+          "tempOverride": 1.1,
+          "topKOverride": 25
+        },
+        {
+          "id": "tech",
+          "label_fr": "Tech",
+          "label_ar": "تقني",
+          "keywords_fr": ["tech", "startup", "cloud", "software"],
+          "keywords_ar": ["تقنية", "شركة ناشئة", "برمجيات"],
+          "modelPath": "model_fr_societe_tech.pt",
+          "vocabPath": "vocab_fr_societe_tech.json",
+          "dataPath": "societe_tech.txt",
+          "promptHint": "Create a tech company name",
+          "tempOverride": 1.1,
+          "topKOverride": 28,
+          "constraintToken": "#{STARTUP}#{INNOVATION}#"
+        },
+        {
+          "id": "services",
+          "label_fr": "Services",
+          "label_ar": "خدمات",
+          "keywords_fr": ["service", "conseil", "agence", "consulting"],
+          "keywords_ar": ["خدمات", "استشارة", "وكالة"],
+          "modelPath": "model_fr_societe_services.pt",
+          "vocabPath": "vocab_fr_societe_services.json",
+          "dataPath": "societe_services.txt",
+          "promptHint": "Create a service company name",
+          "tempOverride": 0.9,
+          "topKOverride": 20,
+          "constraintToken": "#{PROFESSIONAL}#{TRUST}#"
+        },
+        {
+          "id": "industrie",
+          "label_fr": "Industrie",
+          "label_ar": "صناعة",
+          "keywords_fr": ["industrie", "manufacturing", "engineering", "production"],
+          "keywords_ar": ["صناعة", "هندسة", "إنتاج"],
+          "modelPath": "model_fr_societe_industrie.pt",
+          "vocabPath": "vocab_fr_societe_industrie.json",
+          "dataPath": "societe_industrie.txt",
+          "promptHint": "Create an industrial company name",
+          "tempOverride": 0.95,
+          "topKOverride": 22,
+          "constraintToken": "#{ENGINEERING}#{ROBUST}#"
+        }
+      ]
+    }
+  },
+  "languages": ["fr", "ar"]
+}
