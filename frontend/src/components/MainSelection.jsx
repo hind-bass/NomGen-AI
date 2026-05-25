@@ -26,7 +26,7 @@ export default function MainSelection({ onSelectMode }) {
         
         {/* OPTION 1 : NOMS D'ENTREPRISE */}
         <button
-          onClick={() => onSelectMode('entreprise')}
+          onClick={() => onSelectMode('societe')}
           className="w-full flex items-center justify-between p-5 bg-[#12141c] hover:bg-[#1a1d29] border border-gray-950 hover:border-purple-900 rounded-2xl transition-all duration-300 text-right group"
         >
           <div className="flex items-center gap-4">
