@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import MainSelection from './components/MainSelection';
 import PromptScreen from './components/PromptScreen';
 import CardsScreen from './components/CardsScreen';
+import AuthScreen from './components/AuthScreen';
 import { useApp } from './context/AppContext'; // Importation du contexte global
 
 export default function App() {
@@ -12,7 +13,7 @@ export default function App() {
   const [config, setConfig] = useState({ prompt: '', style: 'Tous' });
 
   // Extraction des variables et fonctions depuis le Context global
-  const { lang, t, favorites, exportToCSV, exportToJSON } = useApp();
+  const { lang, t, user, loginUser, favorites, exportToCSV, exportToJSON } = useApp();
 
   const handleSelectMode = (type) => {
     setGenerationType(type);
@@ -24,32 +25,41 @@ export default function App() {
     setScreen('cards'); 
   };
 
+  // ⚡ SÉCURITÉ : Si l'utilisateur n'est pas connecté, on bloque sur l'authentification
+  if (!user) {
+    return <AuthScreen onAuthSuccess={loginUser} />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#0b0c10] font-sans antialiased">
+    <div className="min-h-screen bg-[#0b0c10] font-sans antialiased flex flex-col">
       
+      {/* LA NAVBAR BARRE DE NAVIGATION UNIFIÉE (Toujours visible après connexion) */}
       <Navbar onOpenFavorites={() => setFavoritesOpen(true)} />
 
-      {screen === 'home' && (
-        <MainSelection onSelectMode={handleSelectMode} />
-      )}
+      {/* ZONE DE CONTENU DYNAMIQUE SELON L'ÉCRAN ACUTEL */}
+      <main className="flex-1">
+        {screen === 'home' && (
+          <MainSelection onSelectMode={handleSelectMode} />
+        )}
 
-      {screen === 'prompt' && (
-        <div className="animate-fade-in">
-          <PromptScreen 
+        {screen === 'prompt' && (
+          <div className="animate-fade-in">
+            <PromptScreen 
+              generationType={generationType}
+              onGoBack={() => setScreen('home')}
+              onGenerate={handleGenerate}
+            />
+          </div>
+        )}
+
+        {screen === 'cards' && (
+          <CardsScreen 
+            config={config}
             generationType={generationType}
-            onGoBack={() => setScreen('home')}
-            onGenerate={handleGenerate}
+            onGoBack={() => setScreen('prompt')}
           />
-        </div>
-      )}
-
-      {screen === 'cards' && (
-        <CardsScreen 
-          config={config}
-          generationType={generationType}
-          onGoBack={() => setScreen('prompt')}
-        />
-      )}
+        )}
+      </main>
 
       {/* MODAL / TIROIR COULISSANT DES FAVORIS */}
       {favoritesOpen && (
@@ -92,7 +102,6 @@ export default function App() {
                       <div className={`flex flex-col gap-1 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
                         <h4 className="text-white font-bold tracking-wide text-base">{fav.nom}</h4>
                         <div className="flex items-center gap-1.5">
-                          {/* ⚡ AJOUTÉ ICI : Traduction dynamique et sécurisée du style en minuscules */}
                           <span className="text-[10px] uppercase font-bold text-purple-400 bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-900/30">
                             {t((fav.style || fav.secteur || "tech").toLowerCase().trim())}
                           </span>
