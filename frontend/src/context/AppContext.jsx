@@ -24,14 +24,12 @@ const translations = {
     styleLuxe: "Luxe",
     styleTech: "Tech",
     styleMinimal: "Minimal",
-    // ⚡ AJOUT DES CLÉS EN MINUSCULES POUR LE SÉCURISER AVEC .toLowerCase()
     "tous": "Tous",
     "futuriste": "Futuriste",
     "luxe": "Luxe",
     "tech": "Tech",
     "minimal": "Minimal",
     "corporate": "Entreprise",
-    // Conservation des anciennes clés au cas où
     "Tous": "Tous",
     "Futuriste": "Futuriste",
     "Luxe": "Luxe",
@@ -58,14 +56,12 @@ const translations = {
     styleLuxe: "فاخر",
     styleTech: "تقني",
     styleMinimal: "بسيط",
-    // ⚡ AJOUT DES CLÉS EN MINUSCULES TRADUITES EN ARABE
     "tous": "الكل",
     "futuriste": "مستقبلي",
     "luxe": "فاخر",
     "tech": "تقني",
     "minimal": "بسيط",
     "corporate": "مؤسسي",
-    // Conservation des anciennes clés au cas où
     "Tous": "الكل",
     "Futuriste": "مستقبلي",
     "Luxe": "فاخر",
@@ -77,6 +73,9 @@ const translations = {
 export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState('fr');
   const [favorites, setFavorites] = useState([]);
+  
+  // ⚡ NOUVEAUTÉ : Gestion de l'état global de l'utilisateur (authentification)
+  const [user, setUser] = useState(null); // null signifie déconnecté par défaut
 
   // Inversion automatique du sens de lecture de la page (RTL / LTR)
   useEffect(() => {
@@ -85,6 +84,15 @@ export const AppProvider = ({ children }) => {
   }, [lang]);
 
   const t = (key) => translations[lang][key] || key;
+
+  // ⚡ NOUVEAUTÉ : Fonctions d'authentification globales
+  const loginUser = (userData) => {
+    setUser(userData);
+  };
+
+  const logoutUser = () => {
+    setUser(null);
+  };
 
   // Fonction pour ajouter un favori s'il n'existe pas déjà
   const addFavorite = (nameObj) => {
@@ -134,6 +142,9 @@ export const AppProvider = ({ children }) => {
       lang, 
       setLang, 
       t, 
+      user,         // Export de l'état utilisateur
+      loginUser,    // Export de la fonction de connexion
+      logoutUser,   // Export de la fonction de déconnexion
       favorites, 
       addFavorite, 
       removeFavorite, 
