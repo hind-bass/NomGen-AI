@@ -1,39 +1,49 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Heart, User } from 'lucide-react'; // Installez lucide-react si nécessaire via npm
+import { Globe, Heart, User, LogOut, Sparkles } from 'lucide-react';
 
 export default function Navbar({ onOpenFavorites }) {
-  const { lang, setLang, favorites } = useApp();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { lang, setLang, favorites, user, logoutUser } = useApp();
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   return (
-    <nav className="w-full h-16 px-8 flex justify-between items-center bg-[#0b0c10] border-b border-gray-900">
-      <div className="flex items-center gap-2 font-bold text-white text-xl tracking-wide">
+    <nav className="w-full h-16 px-8 flex justify-between items-center bg-[#0b0c10] border-b border-gray-950 relative z-50">
+      
+      {/* GAUCHE : LOGO UNIFIÉ */}
+      <div className="flex items-center gap-2 font-bold text-white text-sm tracking-wider">
         <span className="p-2 bg-purple-600 rounded-xl text-sm">✨</span> BrandForge
       </div>
 
+      {/* DROITE : BLOC D'ACTIONS */}
       <div className="flex items-center gap-4 relative">
-        {/* BOUTON LANGUE DROPDOWN */}
+        
+        {/* 1. SÉLECTEUR DE LANGUE DROPDOWN STYLISÉ */}
         <div className="relative">
           <button 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 bg-[#1f2833] text-white px-4 py-2 rounded-full border border-gray-800 hover:border-purple-500 transition-all text-sm font-medium"
+            onClick={() => {
+              setLangDropdownOpen(!langDropdownOpen);
+              setProfileDropdownOpen(false); // Ferme le profil si ouvert
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#12141c] border border-gray-950 text-xs font-semibold rounded-full text-white hover:text-purple-400 hover:border-purple-600/30 transition-all"
           >
-            <Globe size={16} />
-            {lang === 'fr' ? 'FR' : 'AR'}
+            <Globe size={13} />
+            <span className="uppercase">{lang}</span>
           </button>
           
-          {dropdownOpen && (
-            <div className={`absolute mt-2 w-32 bg-[#1f2833] border border-gray-800 rounded-xl shadow-xl z-50 ${lang === 'ar' ? 'left-0' : 'right-0'}`}>
+          {langDropdownOpen && (
+            <div className={`absolute mt-2 w-32 bg-[#12141c] border border-gray-950 rounded-xl shadow-2xl z-50 ${
+              lang === 'ar' ? 'left-0' : 'right-0'
+            } animate-fade-in`}>
               <button 
-                onClick={() => { setLang('fr'); setDropdownOpen(false); }}
-                className="w-full text-left px-4 py-2 text-white hover:bg-purple-600 rounded-t-xl text-sm"
+                onClick={() => { setLang('fr'); setLangDropdownOpen(false); }}
+                className="w-full text-left px-4 py-2 text-white hover:bg-purple-600/20 hover:text-purple-400 rounded-t-xl text-xs font-medium transition-all"
               >
                 Français
               </button>
               <button 
-                onClick={() => { setLang('ar'); setDropdownOpen(false); }}
-                className="w-full text-left px-4 py-3 text-white hover:bg-purple-600 rounded-b-xl text-sm font-arabic"
+                onClick={() => { setLang('ar'); setLangDropdownOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-white hover:bg-purple-600/20 hover:text-purple-400 rounded-b-xl text-xs font-medium transition-all"
               >
                 العربية
               </button>
@@ -41,18 +51,53 @@ export default function Navbar({ onOpenFavorites }) {
           )}
         </div>
 
-        {/* BOUTON FAVORIS AVEC COMPTEUR DE BADGE */}
+        {/* 2. BOUTON FAVORIS AVEC COMPTEUR DE BADGE DISCRET */}
         <button 
           onClick={onOpenFavorites}
-          className="relative p-2.5 bg-[#1f2833] text-white rounded-full border border-gray-800 hover:border-purple-500 transition-all"
+          className="relative p-2 bg-[#12141c] border border-gray-950 rounded-full text-white hover:text-emerald-400 hover:border-emerald-500/20 transition-all"
         >
-          <Heart size={18} className={favorites.length > 0 ? "fill-purple-500 text-purple-500" : ""} />
+          <Heart size={15} className={favorites.length > 0 ? "fill-emerald-400 text-emerald-400" : ""} />
           {favorites.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">
+            <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-md">
               {favorites.length}
             </span>
           )}
         </button>
+
+        {/* 3. BOUTON AVATAR DE PROFIL USER ET TIROIR DÉROULANT */}
+        <div className="relative">
+          <button 
+            onClick={() => {
+              setProfileDropdownOpen(!profileDropdownOpen);
+              setLangDropdownOpen(false); // Ferme la langue si ouverte
+            }}
+            className="p-2 bg-[#12141c] border border-purple-600/30 rounded-full text-purple-400 hover:border-purple-600 transition-all flex items-center justify-center"
+          >
+            <User size={15} />
+          </button>
+
+          {profileDropdownOpen && (
+            <div className={`absolute mt-2 w-56 bg-[#12141c] border border-gray-950 rounded-2xl p-4 shadow-2xl flex flex-col gap-3 ${
+              lang === 'ar' ? 'left-0' : 'right-0'
+            } animate-fade-in`}>
+              <div className="border-b border-gray-900 pb-2">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">
+                  {lang === 'ar' ? 'مسجل كـ' : 'Connecté en tant que'}
+                </p>
+                <p className="text-xs text-white font-medium truncate mt-0.5">
+                  {user?.email || 'user@example.com'}
+                </p>
+              </div>
+              <button 
+                onClick={() => { logoutUser(); setProfileDropdownOpen(false); }}
+                className="w-full py-2 px-3 bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 text-red-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                <LogOut size={12} />
+                <span>{lang === 'ar' ? 'تسجيل الخروج' : 'Se déconnecter'}</span>
+              </button>
+            </div>
+          )}
+        </div>
 
       </div>
     </nav>
