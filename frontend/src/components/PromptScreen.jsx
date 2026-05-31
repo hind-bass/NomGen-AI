@@ -5,36 +5,51 @@ import { ArrowLeft, ArrowRight, Sparkles, Cpu, Layers } from 'lucide-react';
 export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
   const { lang, t } = useApp();
   const [prompt, setPrompt] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState('Tous'); // État pour le style sélectionné
   const [isModeB, setIsModeB] = useState(false); // false = Mode A, true = Mode B
+  const [error, setError] = useState(''); // Gestion de l'erreur intégrée à l'interface
   
   // Modèles par défaut selon la langue active
   const [selectedModel, setSelectedModel] = useState(lang === 'ar' ? 'Allam' : 'Mistral');
 
   const BackIcon = lang === 'ar' ? ArrowRight : ArrowLeft;
 
-  // Traductions locales dédiées aux nouveaux paramètres de prompt
+  // Liste des styles disponibles
+  const stylesList = ['Tous', 'Tech', 'Food', 'Luxe'];
+
+  // Traductions locales dédiées aux nouveaux paramètres de prompt et styles
   const localTranslations = {
     fr: {
       titleEnterprise: "Créer une Entreprise",
       titleBrand: "Créer une Marque",
       labelPrompt: "Décrivez votre projet ou secteur d'activité",
       placeholderPrompt: "Ex: Une agence de tech éco-responsable axée sur l'IA...",
+      labelStyle: "Choisir un style d'identité",
       modeA: "Génération Rapide (Mode A)",
       modeB: "Modèles Avancés (Mode B)",
       modelLabel: "Choisir le modèle de langage (LLM)",
       btnGenerate: "Générer les propositions",
-      errorPrompt: "Veuillez saisir une description avant de continuer."
+      errorPrompt: "Veuillez saisir une description avant de continuer.",
+      tous: "Tous",
+      tech: "Tech",
+      food: "Food",
+      luxe: "Luxe"
     },
     ar: {
       titleEnterprise: "إنشاء اسم شركة",
       titleBrand: "إنشاء اسم علامة تجارية",
       labelPrompt: "صف مشروعك أو مجال عملك بدقة",
       placeholderPrompt: "مثال: وكالة تقنية صديقة للبيئة تركز على الذكاء الاصطناعي...",
+      labelStyle: "اختر أسلوب الهوية",
       modeA: "توليد سريع (وضع أ)",
       modeB: "نماذج متقدمة (وضع ب)",
       modelLabel: "اختر نموذج اللغة الكبير (LLM)",
       btnGenerate: "توليد المقترحات",
-      errorPrompt: "يرجى كتابة وصف المشروع قبل المتابعة."
+      errorPrompt: "يرجى كتابة وصف المشروع قبل المتابعة.",
+      tous: "الكل",
+      tech: "تقنية",
+      food: "طعام",
+      luxe: "فخامة"
     }
   };
 
@@ -47,8 +62,10 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError('');
+
     if (!prompt.trim()) {
-      alert(lt('errorPrompt'));
+      setError(lt('errorPrompt'));
       return;
     }
 
@@ -57,7 +74,8 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       prompt: prompt.trim(),
       mode: isModeB ? 'B' : 'A',
       model: isModeB ? selectedModel : 'nanoGPT',
-      style: generationType // Permet de savoir si on est sur 'enterprise' ou 'brand'
+      style: selectedStyle, // Envoie le style choisi ('Tous', 'Tech', 'Food', 'Luxe')
+      generationType: generationType // Permet de savoir si on est sur 'enterprise' ou 'brand'
     });
   };
 
@@ -122,13 +140,39 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
             </label>
             <textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                if (e.target.value.trim()) setError(''); // Efface l'erreur si l'utilisateur écrit
+              }}
               placeholder={lt('placeholderPrompt')}
               rows={4}
               className={`w-full p-4 bg-[#0b0c10] border border-gray-900 focus:border-purple-600/50 rounded-xl text-xs text-white placeholder-gray-700 outline-none transition-all resize-none leading-relaxed ${
                 lang === 'ar' ? 'text-right' : 'text-left'
               }`}
             />
+          </div>
+
+          {/* ⚡ NOUVEAU : BARRE DE CHOIX DU STYLE (Tous, Tech, Food, Luxe) */}
+          <div className="flex flex-col gap-2">
+            <label className={`text-[10px] text-gray-500 font-semibold uppercase tracking-wide ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
+              {lt('labelStyle')}
+            </label>
+            <div className="flex flex-wrap gap-2 justify-start" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              {stylesList.map((style) => (
+                <button
+                  key={style}
+                  type="button"
+                  onClick={() => setSelectedStyle(style)}
+                  className={`px-4 py-2 text-xs font-medium rounded-xl border transition-all ${
+                    selectedStyle === style
+                      ? 'bg-purple-600/10 text-purple-400 border-purple-600/40 shadow-sm'
+                      : 'bg-[#0b0c10] text-gray-400 border-gray-900 hover:text-gray-200'
+                  }`}
+                >
+                  {lt(style.toLowerCase())}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* ⚡ PARTIE 2 : SÉLECTEUR MODÈLE LLM CONDITIONNEL (VISIBLE UNIQUEMENT EN MODE B) */}
@@ -156,6 +200,15 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
                   </>
                 )}
               </select>
+            </div>
+          )}
+
+          {/* ⚡ INTERFACE : MESSAGE D'ERREUR TEXTUEL INTÉGRÉ */}
+          {error && (
+            <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium animate-fade-in ${
+              lang === 'ar' ? 'text-right' : 'text-left'
+            }`}>
+              ⚠️ {error}
             </div>
           )}
 
