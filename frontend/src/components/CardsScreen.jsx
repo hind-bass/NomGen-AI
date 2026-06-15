@@ -16,15 +16,35 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
       try {
         setLoading(true);
         // ⚡ RÉPARATION CRITIQUE : Réinitialisation systématique de la liste et de l'index
-        // Cela force le composant à se vider avant de recevoir la réponse (cohérente ou non) de FastAPI
         setNames([]);
         setCurrentIndex(0);
+
+        // ⚡ INJECTION AUTOMATIQUE DE PROMPT POUR LE MODE RAPIDE (MODE A)
+        let promptAEnvoyer = config.prompt;
+
+        if (config.mode === 'A' || !config.prompt.trim()) {
+          // Définition du type d'activité en fonction de la langue
+          const typeLabel = generationType === 'enterprise' 
+            ? (lang === 'ar' ? 'شركة' : 'entreprise') 
+            : (lang === 'ar' ? 'علامة تجارية' : 'marque');
+
+          // Définition du style/secteur
+          let secteurLabel = config.style;
+          if (config.style === 'Tous') {
+            secteurLabel = lang === 'ar' ? 'عام' : 'moderne';
+          }
+
+          // Construction du prompt de secours transparent pour FastAPI
+          promptAEnvoyer = lang === 'ar'
+            ? `اسم ${typeLabel} في مجال ${secteurLabel}`
+            : `Nom pour une ${typeLabel} dans le secteur ${secteurLabel}`;
+        }
 
         const response = await fetch('http://127.0.0.1:8000/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            prompt: config.prompt,
+            prompt: promptAEnvoyer, // Envoi du prompt adapté ou saisi
             secteur: config.style, 
             langue: lang, 
             n: 30,
@@ -80,7 +100,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
     );
   }
 
-  // ⚡ ÉCRAN DE GESTION DU TEXTE INCOHÉRENT (Fonctionne à chaque itération grâce au nettoyage d'état)
+  // ⚡ ÉCRAN DE GESTION DU TEXTE INCOHÉRENT
   if (!loading && names.length === 0) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
@@ -92,7 +112,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
           <p className="text-gray-500 text-xs leading-relaxed">
             {lang === 'ar' 
               ? 'يبدو أن الوصف الذي أدخلته غير واضح أو عشوائي. يرجى كتابة كلمات رئيسية مفهومة (مثال: شركة تقنية حديثة، مشروع فاخر).' 
-              : 'Votre description semble incohérente ou contient du texte aléatoire. Essayez d\'ajouter des mots-clés clairs (ex: "startup tech moderne", "luxe durable").'}
+              : 'Votre description seems incohérente ou contient du texte aléatoire. Essayez d\'ajouter des mots-clés clairs (ex: "startup tech moderne", "luxe durable").'}
           </p>
           <button 
             onClick={onGoBack} 
