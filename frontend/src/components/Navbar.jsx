@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Heart, User, LogOut, Sparkles } from 'lucide-react';
+import { Globe, Heart, User, LogOut } from 'lucide-react';
 
 export default function Navbar({ onOpenFavorites }) {
   const { lang, setLang, favorites, user, logoutUser } = useApp();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  // Gestionnaire de déconnexion sécurisé pour fermer le menu localement avant de purger le token
+  const handleNavbarLogout = () => {
+    setProfileDropdownOpen(false);
+    logoutUser(); // Déclenche le nettoyage global du token et de l'utilisateur
+  };
 
   return (
     <nav className="w-full h-16 px-8 flex justify-between items-center bg-[#0b0c10] border-b border-gray-950 relative z-50">
@@ -89,8 +95,8 @@ export default function Navbar({ onOpenFavorites }) {
                 </p>
               </div>
               <button 
-                onClick={() => { logoutUser(); setProfileDropdownOpen(false); }}
-                className="w-full py-2 px-3 bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 text-red-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                onClick={handleNavbarLogout}
+                className="w-full py-2 px-3 bg-red-950/20 hover:bg-red-950/50 border border-red-900/30 text-red-400 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <LogOut size={12} />
                 <span>{lang === 'ar' ? 'تسجيل الخروج' : 'Se déconnecter'}</span>
