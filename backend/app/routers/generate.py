@@ -1,40 +1,70 @@
+"""
+Router de génération — mis à jour Jour 1.
+Nouveau : enregistrement de chaque génération dans l'historique DB.
+L'auth est optionnelle : les non-connectés peuvent générer mais sans historique.
+"""
 import re
 import time
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session
+
+from app.database import get_session
 from app.models.schemas import GenerateRequest, GenerateResponse
 from app.services.nomgen_core import NomGenService
+from app.routers.history import log_generation
+
+# Import optionnel du user (ne bloque pas si non connecté)
+from fastapi import Request
+from app.services.auth_service import decode_token
 
 router  = APIRouter()
-service = NomGenService()   # chargé une seule fois au démarrage
+service = NomGenService()   # Chargé une seule fois au démarrage
 
 
-# ⚡ NOUVEAUTÉ : FONCTION DE VALIDATION DU PROMPT (Détection de Charabia / Gibberish)
 def est_un_prompt_incoherent(prompt: str) -> bool:
+    """Détecte un prompt vide, trop court, ou rempli de caractères aléatoires."""
     text = prompt.strip()
-    
-    # 1. Si le prompt est vide ou trop court pour avoir du sens
-    if len(text) < 100:
+    if len(text) < 10:
         return True
-        
-    # 2. Détection de frappes aléatoires continues (ex: "jhdkjhfkdh")
-    # Si le texte ne contient aucun espace et dépasse 8 caractères, c'est incohérent
     if " " not in text and len(text) > 8:
         return True
-        
-    # 3. Vérification de la présence minimale de caractères (lettres FR ou AR)
     has_letters = bool(re.search(r'[a-zA-Z\u0600-\u06FF]', text))
     if not has_letters:
         return True
-
     return False
 
 
+def _get_optional_user_id(request: Request) -> Optional[int]:
+    """
+    Extrait l'user_id depuis le token JWT si présent dans les headers.
+    Retourne None si pas de token (utilisateur non connecté).
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ", 1)[1]
+    payload = decode_token(token)
+    if payload:
+        return payload.get("user_id")
+    return None
+
+
 @router.post("/generate", response_model=GenerateResponse)
-async def generate_names(req: GenerateRequest):
+async def generate_names(
+    req: GenerateRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """
+    Génère des noms de marque.
+    - Si connecté : enregistre la génération dans l'historique.
+    - Si non connecté : génère quand même (sans historique).
+    """
     try:
         t0 = time.time()
-        
-        # ⚡ SÉCURITÉ : Si le prompt est du charabia, on court-circuite le service NomGenService
+
         if est_un_prompt_incoherent(req.prompt):
             return GenerateResponse(
                 noms=[],
@@ -42,16 +72,34 @@ async def generate_names(req: GenerateRequest):
                 duree_ms=round((time.time() - t0) * 1000, 1),
             )
 
-        # Logique classique si le prompt est valide
         result = service.generate(
-            prompt=req.prompt, secteur=req.secteur, langue=req.langue,
-            n=req.n, temperature=req.temperature,
-            top_k=req.top_k, seed=req.seed,
+            prompt=req.prompt,
+            secteur=req.secteur,
+            langue=req.langue,
+            n=req.n,
+            temperature=req.temperature,
+            top_k=req.top_k,
+            seed=req.seed,
         )
+
+        # ⚡ NOUVEAU : Log dans l'historique si l'utilisateur est connecté
+        user_id = _get_optional_user_id(request)
+        if user_id:
+            log_generation(
+                session=session,
+                user_id=user_id,
+                prompt=req.prompt,
+                langue=req.langue,
+                secteur=req.secteur,
+                n_generated=len(result["noms"]),
+                mode="A",
+            )
+
         return GenerateResponse(
             noms=result["noms"],
             tokens_detectes=result["tokens"],
             duree_ms=round((time.time() - t0) * 1000, 1),
         )
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
