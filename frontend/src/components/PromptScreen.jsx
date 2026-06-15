@@ -60,18 +60,25 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
     setSelectedModel(lang === 'ar' ? 'Allam' : 'Mistral');
   }, [lang]);
 
+  // Réinitialiser les erreurs et le prompt si on bascule entre les modes
+  React.useEffect(() => {
+    setError('');
+    if (!isModeB) setPrompt('');
+  }, [isModeB]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
-    if (!prompt.trim()) {
+    // La validation du prompt s'applique UNIQUEMENT en Mode B
+    if (isModeB && !prompt.trim()) {
       setError(lt('errorPrompt'));
       return;
     }
 
     // On transmet toutes les données de configuration configurées à CardsScreen
     onGenerate({
-      prompt: prompt.trim(),
+      prompt: isModeB ? prompt.trim() : '', // Pas de prompt envoyé en Mode A
       mode: isModeB ? 'B' : 'A',
       model: isModeB ? selectedModel : 'nanoGPT',
       style: selectedStyle, // Envoie le style choisi ('Tous', 'Tech', 'Food', 'Luxe')
@@ -133,26 +140,28 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
             </button>
           </div>
 
-          {/* INPUT DESCRIPTION PROMPT */}
-          <div className="flex flex-col gap-1.5">
-            <label className={`text-[10px] text-gray-500 font-semibold uppercase tracking-wide ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              {lt('labelPrompt')}
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-                if (e.target.value.trim()) setError(''); // Efface l'erreur si l'utilisateur écrit
-              }}
-              placeholder={lt('placeholderPrompt')}
-              rows={4}
-              className={`w-full p-4 bg-[#0b0c10] border border-gray-900 focus:border-purple-600/50 rounded-xl text-xs text-white placeholder-gray-700 outline-none transition-all resize-none leading-relaxed ${
-                lang === 'ar' ? 'text-right' : 'text-left'
-              }`}
-            />
-          </div>
+          {/* INPUT DESCRIPTION PROMPT - RENDU CONDITIONNEL (UNIQUEMENT MODE B) */}
+          {isModeB && (
+            <div className="flex flex-col gap-1.5 animate-fade-in">
+              <label className={`text-[10px] text-gray-500 font-semibold uppercase tracking-wide ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
+                {lt('labelPrompt')}
+              </label>
+              <textarea
+                value={prompt}
+                onChange={(e) => {
+                  setPrompt(e.target.value);
+                  if (e.target.value.trim()) setError(''); 
+                }}
+                placeholder={lt('placeholderPrompt')}
+                rows={4}
+                className={`w-full p-4 bg-[#0b0c10] border border-gray-900 focus:border-purple-600/50 rounded-xl text-xs text-white placeholder-gray-700 outline-none transition-all resize-none leading-relaxed ${
+                  lang === 'ar' ? 'text-right' : 'text-left'
+                }`}
+              />
+            </div>
+          )}
 
-          {/* ⚡ NOUVEAU : BARRE DE CHOIX DU STYLE (Tous, Tech, Food, Luxe) */}
+          {/* ⚡ BARRE DE CHOIX DU STYLE (Toujours visible pour filtrer) */}
           <div className="flex flex-col gap-2">
             <label className={`text-[10px] text-gray-500 font-semibold uppercase tracking-wide ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
               {lt('labelStyle')}
@@ -203,8 +212,8 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
             </div>
           )}
 
-          {/* ⚡ INTERFACE : MESSAGE D'ERREUR TEXTUEL INTÉGRÉ */}
-          {error && (
+          {/* ⚡ INTERFACE : MESSAGE D'ERREUR TEXTUEL INTÉGRÉ (S'AFFICHERA SEULEMENT EN MODE B SI VIDE) */}
+          {error && isModeB && (
             <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium animate-fade-in ${
               lang === 'ar' ? 'text-right' : 'text-left'
             }`}>
