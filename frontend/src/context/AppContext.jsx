@@ -2,6 +2,15 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AppContext = createContext();
 
+// Fonction utilitaire interne pour décoder le JWT et lire le rôle sans dépendance externe
+const parseJwt = (token) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+};
+
 // Dictionnaire de traduction pour basculer toute l'interface
 const translations = {
   fr: {
@@ -74,8 +83,30 @@ export const AppProvider = ({ children }) => {
   const [lang, setLang] = useState('fr');
   const [favorites, setFavorites] = useState([]);
   
-  // ⚡ NOUVEAUTÉ : Gestion de l'état global de l'utilisateur (authentification)
-  const [user, setUser] = useState(null); // null signifie déconnecté par défaut
+  // ⚡ ÉTATS D'AUTHENTIFICATION AVANCÉS & PERSISTANTS
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [user, setUser] = useState(null); 
+  const [userRole, setUserRole] = useState('user'); // 'user' ou 'admin'
+
+  // Écouteur de Token pour synchroniser le rôle, l'utilisateur et le localStorage
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+      const decoded = parseJwt(token);
+      if (decoded) {
+        setUserRole(decoded.role || 'user');
+        // Si l'état user est vide mais qu'on a un token valide, on reconstruit le profil minimal
+        if (!user) {
+          setUser({ email: decoded.sub, id: decoded.user_id });
+        }
+      }
+    } else {
+      // ⚡ CORRECTION : Si le token devient null, on nettoie TOUT immédiatement de manière stricte
+      localStorage.removeItem('token');
+      setUser(null);
+      setUserRole('user');
+    }
+  }, [token]);
 
   // Inversion automatique du sens de lecture de la page (RTL / LTR)
   useEffect(() => {
@@ -85,13 +116,20 @@ export const AppProvider = ({ children }) => {
 
   const t = (key) => translations[lang][key] || key;
 
-  // ⚡ NOUVEAUTÉ : Fonctions d'authentification globales
-  const loginUser = (userData) => {
+  // ⚡ Fonctions d'authentification globales adaptées au JWT
+  const loginUser = (userData, receivedToken) => {
     setUser(userData);
+    if (receivedToken) {
+      setToken(receivedToken);
+    }
   };
 
+  // ⚡ CORRECTION SÉCURISÉE DE LA DÉCONNEXION (Évite l'effet figé/statique)
   const logoutUser = () => {
-    setUser(null);
+    localStorage.removeItem('token'); // Nettoyage physique instantané du stockage local
+    setUser(null);                    // Réinitialisation immédiate du profil de l'utilisateur
+    setUserRole('user');              // Remise à zéro instantanée du rôle par défaut
+    setToken(null);                   // Alerte instantanée de l'application pour re-render l'AuthScreen
   };
 
   // Fonction pour ajouter un favori s'il n'existe pas déjà
@@ -142,9 +180,11 @@ export const AppProvider = ({ children }) => {
       lang, 
       setLang, 
       t, 
-      user,         // Export de l'état utilisateur
-      loginUser,    // Export de la fonction de connexion
-      logoutUser,   // Export de la fonction de déconnexion
+      token,        // Export du jeton JWT brut
+      user,         // Export de l'état utilisateur (email, id)
+      userRole,     // Export du rôle explicite ('admin' ou 'user')
+      loginUser,    // Fonction de connexion
+      logoutUser,   // Fonction de déconnexion
       favorites, 
       addFavorite, 
       removeFavorite, 
