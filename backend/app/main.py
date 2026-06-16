@@ -23,6 +23,9 @@ from app.routers.reservations  import router as reservations_router
 # ── Routers Jour 4 (profil) ───────────────────────────────────────────────────
 from app.routers.profile       import router as profile_router
 
+# ── Routers Admin ──────────────────────────────────────────────────────────────
+from app.routers.admin         import router as admin_router
+
 # ── Base de données ───────────────────────────────────────────────────────────
 from app.database import create_db_and_tables
 from app.seeder   import seed_admin
@@ -70,6 +73,9 @@ app.include_router(reservations_router)    # /api/reservations
 # Jour 4
 app.include_router(profile_router)         # /api/profile
 
+# Admin
+app.include_router(admin_router)           # /api/admin/...
+
 
 # ── Événement de démarrage ────────────────────────────────────────────────────
 @app.on_event("startup")
@@ -77,7 +83,7 @@ def on_startup():
     """Initialise la DB et crée l'admin par défaut si absent."""
     create_db_and_tables()
     seed_admin()
-    print("[NomGen] API v4.0 démarrée ✓")
+    print("[NomGen] API v4.0 demarree [OK]")
     print("[NomGen] Swagger UI : http://localhost:8000/docs")
 
 
@@ -100,5 +106,9 @@ async def root():
             "reservations": "POST|GET /api/reservations",
             "profile": "GET /api/profile",
             "llm_models": "GET /api/models/llm-list",
+            "admin_users": "POST|GET|PATCH|DELETE /api/admin/users/:id",
+            "admin_suggestions_list": "GET /api/admin/suggestions",
+            "admin_suggestions_add": "POST /api/admin/suggestions/add",
+            "admin_suggestions_review": "PATCH /api/admin/suggestions/:id",
         }
     }

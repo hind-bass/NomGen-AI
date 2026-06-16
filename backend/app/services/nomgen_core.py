@@ -60,7 +60,7 @@ class NomGenService:
         self._model_cache["ar_generic"] = self._load_model(
             WEIGHTS_DIR / "model_ar.pt", len(self.vocab_ar["stoi"])
         )
-        print(f"[NomGenService] Modèles génériques chargés ✓")
+        print(f"[NomGenService] Modèles génériques chargés [OK]")
 
         # ── Tenter de charger les modèles par catégorie (s'ils existent) ────
         for secteur in SECTEURS_CONNUS:
@@ -73,9 +73,9 @@ class NomGenService:
                 if path.exists():
                     key = f"{langue}_{secteur}"
                     self._model_cache[key] = self._load_model(path, vocab_size)
-                    print(f"  ✓ Modèle spécialisé chargé : {path.name}")
+                    print(f"  [OK] Modèle spécialisé chargé : {path.name}")
 
-        print(f"[NomGenService] {len(self._model_cache)} modèle(s) en cache ✓")
+        print(f"[NomGenService] {len(self._model_cache)} modèle(s) en cache [OK]")
 
     def _load_model(self, path: Path, vocab_size: int) -> NanoGPT:
         """Charge un fichier .pt et retourne le modèle en mode eval."""
