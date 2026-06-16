@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Heart, User, LogOut } from 'lucide-react';
+import { Globe, Heart, User, LogOut, PlusCircle } from 'lucide-react';
 
-export default function Navbar({ onOpenFavorites }) {
+export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
   const { lang, setLang, favorites, user, logoutUser } = useApp();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -24,7 +24,20 @@ export default function Navbar({ onOpenFavorites }) {
       {/* DROITE : BLOC D'ACTIONS */}
       <div className="flex items-center gap-4 relative">
         
-        {/* 1. SÉLECTEUR DE LANGUE DROPDOWN STYLISÉ */}
+        {/* 1. NOUVEAU : BOUTON PROPOSER UN NOM */}
+        <button
+          onClick={() => {
+            onOpenSuggestion();
+            setLangDropdownOpen(false);    // Évite la superposition des menus
+            setProfileDropdownOpen(false);
+          }}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-900/20 hover:bg-purple-600 border border-purple-600/30 text-xs font-semibold rounded-full text-purple-300 hover:text-white transition-all active:scale-95"
+        >
+          <PlusCircle size={13} />
+          <span>{lang === 'ar' ? 'إقتراح اسم' : 'Proposer un nom'}</span>
+        </button>
+
+        {/* 2. SÉLECTEUR DE LANGUE DROPDOWN STYLISÉ */}
         <div className="relative">
           <button 
             onClick={() => {
@@ -57,7 +70,7 @@ export default function Navbar({ onOpenFavorites }) {
           )}
         </div>
 
-        {/* 2. BOUTON FAVORIS AVEC COMPTEUR DE BADGE DISCRET */}
+        {/* 3. BOUTON FAVORIS AVEC COMPTEUR DE BADGE DISCRET */}
         <button 
           onClick={onOpenFavorites}
           className="relative p-2 bg-[#12141c] border border-gray-950 rounded-full text-white hover:text-emerald-400 hover:border-emerald-500/20 transition-all"
@@ -70,7 +83,7 @@ export default function Navbar({ onOpenFavorites }) {
           )}
         </button>
 
-        {/* 3. BOUTON AVATAR DE PROFIL USER ET TIROIR DÉROULANT */}
+        {/* 4. BOUTON AVATAR DE PROFIL USER ET TIROIR DÉROULANT */}
         <div className="relative">
           <button 
             onClick={() => {
