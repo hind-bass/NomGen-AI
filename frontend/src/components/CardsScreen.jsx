@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import BrandCard from './BrandCard';
-import { X, Bookmark, Heart, RotateCcw, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { X, Bookmark, Heart, RotateCcw, ArrowLeft, ArrowRight, Loader2, CreditCard } from 'lucide-react';
 
-export default function CardsScreen({ config, generationType, onGoBack }) {
+export default function CardsScreen({ config, generationType, onGoBack, onReserveClick }) {
   const { t, lang, addFavorite } = useApp();
   const [names, setNames] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -112,7 +112,7 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
           <p className="text-gray-500 text-xs leading-relaxed">
             {lang === 'ar' 
               ? 'يبدو أن الوصف الذي أدخلته غير واضح أو عشوائي. يرجى كتابة كلمات رئيسية مفهومة (مثال: شركة تقنية حديثة، مشروع فاخر).' 
-              : 'Votre description seems incohérente ou contient du texte aléatoire. Essayez d\'ajouter des mots-clés clairs (ex: "startup tech moderne", "luxe durable").'}
+              : 'Votre description semble incohérente ou contient du texte aléatoire. Essayez d\'ajouter des mots-clés clairs (ex: "startup tech moderne", "luxe durable").'}
           </p>
           <button 
             onClick={onGoBack} 
@@ -143,14 +143,25 @@ export default function CardsScreen({ config, generationType, onGoBack }) {
       </div>
 
       {/* COMPOSANT DE VUE DE CARTE */}
-      <div className="flex-1 flex items-center justify-center my-6 relative w-full">
+      <div className="flex-1 flex flex-col items-center justify-center my-4 relative w-full gap-4">
         {currentIndex < names.length ? (
-          <BrandCard 
-            data={currentCard} 
-            animationClass={animation} 
-            index={currentIndex} 
-            config={config} 
-          />
+          <>
+            <BrandCard 
+              data={currentCard} 
+              animationClass={animation} 
+              index={currentIndex} 
+              config={config} 
+            />
+            
+            {/* ⚡ NOUVEAU BOUTON : RÉSERVATION EXPRESS DIRECTEMENT SOUS LA CARTE */}
+            <button
+              onClick={() => onReserveClick(currentCard.nom)}
+              className="w-full max-w-sm py-3 bg-[#12141c] hover:bg-purple-950/20 border border-purple-900/40 text-purple-400 hover:text-purple-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+            >
+              <CreditCard size={14} />
+              <span>{lang === 'ar' ? 'حجز هذا الاسم (خيار مجاني متاح)' : 'Réserver ce nom (Option gratuite disponible)'}</span>
+            </button>
+          </>
         ) : (
           <div className="text-center p-8 bg-[#12141c] rounded-3xl border border-gray-950 w-full max-w-sm aspect-[3/4] flex flex-col justify-center items-center gap-2">
             <span className="text-3xl">🎉</span>
