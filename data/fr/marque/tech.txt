@@ -190,3 +190,399 @@ vertalia
 vestia
 viticulia
 webfusion
+algolia
+alan
+ankorstore
+backmarket
+batch
+blablacar
+bolt
+botify
+brigad
+bundle
+byteflight
+capgemini
+capsens
+castalie
+checkr
+choice
+circulab
+cityscoot
+clarins
+clickandboat
+comet
+contentsquare
+coorpacademy
+cozy cloud
+deezer
+deepki
+defacto
+dejamobile
+delair
+deliverect
+diabolocom
+digi school
+doctolib
+doctrine
+dolead
+dreem
+ekimetrics
+ekwateur
+electra
+elium
+enercoop
+episod
+epsor
+esker
+evaneos
+exaprint
+ezus
+fabernovel
+famoco
+farmitoo
+fasterize
+ferpection
+figaro classifieds
+flexjob
+flowdesk
+flyinblue
+forestadmin
+foxintelligence
+fretlink
+gandi
+genesis
+getaround
+getquanty
+gonogo
+gorgias
+greenbureau
+greenly
+greentech innovation
+gymlib
+happydemics
+happyquest
+harveys
+haystack
+heetch
+holaspirit
+hook
+hopteo
+hubeecar
+hubspot france
+hyphen
+iadvize
+ideoclick
+idexlab
+ikoula
+illus
+impala
+inato
+indy
+ingrid
+inokyo
+inpulse
+inqom
+instagram france
+izicap
+jobteaser
+joins
+jonak
+jumia
+kaizen solutions
+kard
+kavee
+kelio
+keplr
+keyneosoft
+kisio
+klaxoon
+kymono
+labster
+lamia
+leanpay
+legalstart
+lemlist
+lever
+lilo
+liqtech
+littlebig connection
+livepepper
+lmb solutions
+loop earplugs
+louvre hotels
+lumapps
+lunatech
+lydia
+maasai
+majelan
+manomano
+mapotempo
+maximelab
+meero
+memo
+meritis
+meteo france
+mews
+miimosa
+miinto
+mindbaz
+mitto
+mobi rider
+mobilize
+modulr
+moleskine france
+monbanker
+moncarsupermarket
+mondocteur
+monsieurvacances
+mooncard
+moonshot
+mopinion
+movinmotion
+mylittleextra
+naelan
+namR
+nanoq
+napta
+nemorin
+neo9
+neurones
+nexity digital
+ninacloak
+nirio
+nopuntum
+nordine
+notchup
+november five
+octoparse
+okamac
+oktal
+okto
+olist
+olswang france
+oovoom
+openclassrooms
+openflyers
+openium
+optelec
+optimix
+orgvue
+ouihelp
+ovhcloud
+pagerduty france
+panopli
+papiris
+pappers
+parismatch digital
+particeep
+passbolt
+payfit
+pendo
+pentalog
+performa
+phoceis
+pictosoft
+piink
+pivotal labs france
+pixelsmithstudios
+pixpay
+planity
+plotly france
+pluralsite
+pmy
+poool
+powens
+powerz
+prepdd
+prevision io
+profilage
+propulso
+psycle
+pullrequest
+pushly
+questovation
+qonto
+quonto
+quotatis
+rainforest
+rakuten france
+ratp dev
+reachfive
+reachly
+recare
+recko
+redspher
+reflect
+reglo mobile
+relayr
+remakeit
+remotify
+replit france
+resolve
+retable
+reviewflowz
+revivio
+rhino
+rockerbox france
+rootsid
+runrepeat
+saegus
+salesloft france
+saymine
+scaleway
+scout enterprise
+seabird
+seechange
+selency
+sendinblue
+sennder
+septime
+sesamm
+shift technology
+shopify france
+showpad france
+sigfox
+signaturit
+sinch france
+sinequa
+sista fund
+skeepers
+skillup
+skello
+slite
+smartagri
+smatchit
+snapshift
+sncf connect
+socialclub
+societe generale startup
+soitec
+solency
+somfy
+spacefill
+spark archives
+speexx france
+sphereai
+spirii
+spotsie
+squadra
+standard market
+statista france
+stonly
+stormshield
+strapi
+streaming club
+studylink
+subvisual
+supertripper
+surveymonkey france
+swapcard
+swile
+syment
+synapse medicine
+synaxia
+sysdream
+tagoo
+talend
+talon one france
+taptap send
+tastevin
+tatami
+teamotiv france
+tenzing
+teradata france
+theodo
+thinkovery
+ticket for change
+tilkee
+timesulin
+tivio
+tnp consultants
+toast
+toasttab france
+toile
+toolio
+toptal france
+topicus
+toucan toco
+trackchecker
+traefik labs
+travaux
+traxalt
+tribe xr
+tripletex france
+trivia maker
+truendo
+tubemogul france
+tupi
+turfu
+uala
+ubeeqo
+ulule
+umanize
+unimog france
+upciti
+upflow
+upkey
+uplaw
+uptime
+userlane france
+utelyo
+uvaro
+valtech
+veepee
+veolia digital
+verto analytics france
+viareport
+viavoo
+videofutur
+vigicorp
+vigiware
+vinci energies digital
+virsabi
+vivatech
+vividwire
+voluum france
+vptech
+wagon
+wakam
+wallix
+wandercraft
+waynium
+webmecanik
+welcometothejungle
+wemaintain
+wemanity
+wemapping
+wemind
+wepack
+wepresto
+westudio
+whodunit
+whosonlocation france
+widdi
+wifirst
+wildmoka
+wimi
+wing
+woorank france
+worldia
+wunderman thompson france
+xelians
+xhec
+xoolio
+xtramile
+yagency
+yper
+yourcast
+youscribe
+zeenea
+zefir
+zelros
+zendesk france
+zenpark
+zenly
+zerosix
+zesty
+zola france
+zynga france
