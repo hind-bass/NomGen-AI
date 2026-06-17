@@ -121,6 +121,10 @@ export const AppProvider = ({ children }) => {
     setUser(userData);
     if (receivedToken) {
       setToken(receivedToken);
+      const decoded = parseJwt(receivedToken);
+      if (decoded) {
+        setUserRole(decoded.role || 'user');
+      }
     }
   };
 

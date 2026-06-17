@@ -14,6 +14,9 @@ export default function AuthScreen({ onAuthSuccess }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const API_BASE = 'http://127.0.0.1:8000';
 
   // Gestion de la flèche de retour selon le sens de lecture (LTR / RTL)
   const BackIcon = lang === 'ar' ? ArrowRight : ArrowLeft;
@@ -33,6 +36,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       switchtoLogin: "Déjà membre ? Connectez-vous",
       errFields: "Veuillez remplir tous les champs.",
       errMatch: "Les mots de passe ne correspondent pas.",
+      errAuth: "Email ou mot de passe incorrect.",
+      errNetwork: "Impossible de joindre le serveur.",
+      errRegister: "Impossible de créer le compte.",
     },
     ar: {
       loginTitle: "تسجيل الدخول",
@@ -47,6 +53,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       switchtoLogin: "عضو بالفعل؟ سجل دخولك",
       errFields: "يرجى ملء جميع الحقول.",
       errMatch: "كلمات المرور غير متطابقة.",
+      errAuth: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      errNetwork: "تعذر الاتصال بالخادم.",
+      errRegister: "تعذر إنشاء الحساب.",
     }
   };
 
@@ -58,7 +67,7 @@ export default function AuthScreen({ onAuthSuccess }) {
     setShowConfirmPassword(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -72,8 +81,39 @@ export default function AuthScreen({ onAuthSuccess }) {
       return;
     }
 
-    // Authentification simulée réussie
-    onAuthSuccess({ email });
+    setIsLoading(true);
+    try {
+      if (isRegister) {
+        const regRes = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!regRes.ok) {
+          const data = await regRes.json().catch(() => ({}));
+          setError(data.detail || at('errRegister'));
+          return;
+        }
+      }
+
+      const loginRes = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginRes.ok) {
+        setError(at('errAuth'));
+        return;
+      }
+
+      const data = await loginRes.json();
+      onAuthSuccess({ email: data.email, role: data.role }, data.access_token);
+    } catch {
+      setError(at('errNetwork'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -211,9 +251,10 @@ export default function AuthScreen({ onAuthSuccess }) {
             {/* BOUTON SOUMISSION PRINCIPAL */}
             <button
               type="submit"
-              className="w-full py-3 mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs tracking-wide transition-all shadow-lg shadow-purple-950/30 active:scale-[0.98]"
+              disabled={isLoading}
+              className="w-full py-3 mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs tracking-wide transition-all shadow-lg shadow-purple-950/30 active:scale-[0.98]"
             >
-              {isRegister ? at('btnSubmitRegister') : at('btnSubmitLogin')}
+              {isLoading ? '...' : (isRegister ? at('btnSubmitRegister') : at('btnSubmitLogin'))}
             </button>
           </form>
 

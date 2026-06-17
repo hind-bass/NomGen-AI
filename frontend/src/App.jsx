@@ -31,6 +31,13 @@ export default function App() {
 
   const { lang, t, token, user, userRole, loginUser, favorites, removeFavorite, exportToCSV, exportToJSON } = useApp();
 
+  const handleAuthSuccess = (userData, receivedToken) => {
+    loginUser(userData, receivedToken);
+    if (userData.role === 'admin') {
+      setScreen('admin');
+    }
+  };
+
   const handleSelectMode = (type) => {
     setGenerationType(type);
     setScreen('prompt');
@@ -155,7 +162,7 @@ export default function App() {
   };
 
   if (!user) {
-    return <AuthScreen onAuthSuccess={loginUser} />;
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
   }
 
   return (

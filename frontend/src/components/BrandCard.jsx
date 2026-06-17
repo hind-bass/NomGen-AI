@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 
-export default function BrandCard({ data, animationClass, index, config }) {
+export default function BrandCard({ data, animationClass, index, config, isLlm = false }) {
   // ⚡ MISE À JOUR : Extraction de la fonction de traduction 't' depuis le contexte
   const { lang, t } = useApp();
 
@@ -36,10 +36,14 @@ export default function BrandCard({ data, animationClass, index, config }) {
 
       {/* METADONNÉES EN HAUT */}
       <div className="z-10 flex flex-col gap-1 items-start">
-        {/* ⚡ RÉPARATION : Remplacement du texte en dur par le style dynamique et traduit */}
         <span className="text-[10px] uppercase tracking-widest font-bold text-white/80 bg-black/20 px-3 py-1 rounded-full border border-white/10">
           {translatedStyle}
         </span>
+        {isLlm && (
+          <span className="text-[9px] uppercase tracking-wider font-bold text-purple-200/90 bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-400/20">
+            LLM
+          </span>
+        )}
       </div>
 
       {/* NOM CENTRAL DE LA MARQUE */}

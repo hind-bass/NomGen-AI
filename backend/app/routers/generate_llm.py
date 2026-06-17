@@ -2,6 +2,9 @@
 Router Mode B — Génération via LLM externe (Ollama, Mistral, OpenAI, Allam...).
 POST /api/generate-llm
 Corps : { prompt, model_key, langue, secteur, type_nom, n, temperature }
+
+POST /api/generate-llm-simple
+Mode simplifié: appel direct Ollama ou OpenAI via httpx (15 lignes)
 """
 import time
 from typing import Optional
@@ -12,6 +15,7 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.services.llm_service import llm_router
+from app.services.ollama_service import call_ollama, get_recommended_models
 from app.services.auth_service import decode_token
 from app.routers.history import log_generation
 
@@ -143,3 +147,89 @@ def list_llm_models(langue: Optional[str] = None):
     """
     models = llm_router.get_available_models(langue=langue)
     return {"models": models, "total": len(models)}
+
+
+# ─── Endpoint simplifié Mode B (Ollama direct) ────────────────────────────────
+
+class SimpleLLMRequest(BaseModel):
+    prompt: str = Field(..., min_length=5)
+    model: str = Field(default="mistral", description="Ollama model name")
+    langue: str = Field(default="fr")
+    secteur: str = Field(default="GENERAL")
+    type_nom: str = Field(default="marque")
+    n: int = Field(default=8, ge=1, le=20)
+
+
+@router.post("/generate-llm-simple", response_model=LLMGenerateResponse)
+async def generate_names_ollama(
+    req: SimpleLLMRequest,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    """Mode B simplifié : appel direct Ollama ou fallback OpenAI."""
+    t0 = time.time()
+
+    try:
+        noms = await call_ollama(req.model, req.prompt, req.langue)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    # Format response
+    result_noms = [
+        LLMGeneratedName(
+            nom=name.lower().strip(),
+            score=round(50 + min(len(name) * 2, 40), 1),
+            langue=req.langue,
+            secteur=req.secteur,
+            source="llm",
+        )
+        for name in noms[:req.n]
+        if name.strip()
+    ]
+
+    # Log
+    user_id = _get_optional_user_id(request)
+    if user_id:
+        log_generation(
+            session=session,
+            user_id=user_id,
+            prompt=req.prompt,
+            langue=req.langue,
+            secteur=req.secteur,
+            n_generated=len(result_noms),
+            mode="B",
+        )
+
+    return LLMGenerateResponse(
+        noms=result_noms,
+        model_used=req.model,
+        duree_ms=round((time.time() - t0) * 1000, 1),
+    )
+
+
+# ─── Endpoint: Modèles recommandés ─────────────────────────────────────────────
+
+@router.get("/models/recommended")
+def get_recommended_llm_models(langue: Optional[str] = None):
+    """
+    Retourne les modèles LLM recommandés pour une langue.
+
+    Langues supportées:
+    - 'fr': Français (GPT, Mistral, DeepSeek, Claude)
+    - 'ar': Arabe (Allam, Fanar, AceGPT, Jais)
+    - 'en': Anglais (GPT, Mistral)
+    """
+    if not langue:
+        return {
+            "fr": get_recommended_models("fr"),
+            "ar": get_recommended_models("ar"),
+            "en": get_recommended_models("en"),
+        }
+
+    models = get_recommended_models(langue)
+    return {
+        "langue": langue,
+        "models": models,
+        "count": len(models),
+        "note": "Modèles recommandés en ordre de préférence"
+    }

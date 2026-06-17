@@ -3,66 +3,109 @@ import { useApp } from '../context/AppContext';
 import BrandCard from './BrandCard';
 import { X, Bookmark, Heart, RotateCcw, ArrowLeft, ArrowRight, Loader2, CreditCard } from 'lucide-react';
 
+const API_BASE = 'http://127.0.0.1:8000';
+
+const SECTEUR_MAP = { Tous: 'GENERAL', Tech: 'TECH', Food: 'FOOD', Luxe: 'LUXE' };
+
 export default function CardsScreen({ config, generationType, onGoBack, onReserveClick }) {
-  const { t, lang, addFavorite } = useApp();
+  const { t, lang, addFavorite, token } = useApp();
   const [names, setNames] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [animation, setAnimation] = useState('');
+  const [fetchError, setFetchError] = useState('');
+  const [modelUsed, setModelUsed] = useState('');
 
-  // 1. APPEL À VOTRE SERVEUR FASTAPI DYNAMIQUE
+  const isModeB = config.mode === 'B';
+  const typeNom = generationType === 'enterprise' ? 'societe' : 'marque';
+  const secteur = SECTEUR_MAP[config.style] || 'GENERAL';
+
   useEffect(() => {
     async function fetchNames() {
       try {
         setLoading(true);
-        // ⚡ RÉPARATION CRITIQUE : Réinitialisation systématique de la liste et de l'index
+        setFetchError('');
         setNames([]);
         setCurrentIndex(0);
+        setModelUsed('');
 
-        // ⚡ INJECTION AUTOMATIQUE DE PROMPT POUR LE MODE RAPIDE (MODE A)
-        let promptAEnvoyer = config.prompt;
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        if (config.mode === 'A' || !config.prompt.trim()) {
-          // Définition du type d'activité en fonction de la langue
-          const typeLabel = generationType === 'enterprise' 
-            ? (lang === 'ar' ? 'شركة' : 'entreprise') 
-            : (lang === 'ar' ? 'علامة تجارية' : 'marque');
+        if (isModeB) {
+          const response = await fetch(`${API_BASE}/api/generate-llm`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              prompt: config.prompt,
+              model_key: config.model,
+              langue: lang,
+              secteur,
+              type_nom: typeNom,
+              n: 15,
+              temperature: 0.8,
+            }),
+          });
 
-          // Définition du style/secteur
-          let secteurLabel = config.style;
-          if (config.style === 'Tous') {
-            secteurLabel = lang === 'ar' ? 'عام' : 'moderne';
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            setFetchError(err.detail || (lang === 'ar' ? 'فشل توليد الأسماء.' : 'Échec de la génération LLM.'));
+            return;
           }
 
-          // Construction du prompt de secours transparent pour FastAPI
-          promptAEnvoyer = lang === 'ar'
-            ? `اسم ${typeLabel} في مجال ${secteurLabel}`
-            : `Nom pour une ${typeLabel} dans le secteur ${secteurLabel}`;
-        }
+          const data = await response.json();
+          setNames(data.noms || []);
+          setModelUsed(data.model_used || config.modelLabel || config.model);
+        } else {
+          let promptAEnvoyer = config.prompt;
+          if (!config.prompt?.trim()) {
+            const typeLabel = generationType === 'enterprise'
+              ? (lang === 'ar' ? 'شركة' : 'entreprise')
+              : (lang === 'ar' ? 'علامة تجارية' : 'marque');
+            let secteurLabel = config.style;
+            if (config.style === 'Tous') {
+              secteurLabel = lang === 'ar' ? 'عام' : 'moderne';
+            }
+            promptAEnvoyer = lang === 'ar'
+              ? `اسم ${typeLabel} في مجال ${secteurLabel}`
+              : `Nom pour une ${typeLabel} dans le secteur ${secteurLabel}`;
+          }
 
-        const response = await fetch('http://127.0.0.1:8000/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: promptAEnvoyer, // Envoi du prompt adapté ou saisi
-            secteur: config.style, 
-            langue: lang, 
-            n: 30,
-            temperature: 0.7,
-            top_k: 10,
-            seed: null
-          })
-        });
-        const data = await response.json();
-        setNames(data.noms || []);
+          const response = await fetch(`${API_BASE}/api/generate`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              prompt: promptAEnvoyer,
+              secteur: config.style,
+              langue: lang,
+              n: 30,
+              temperature: 0.7,
+              top_k: 10,
+              seed: null,
+            }),
+          });
+
+          if (!response.ok) {
+            setFetchError(lang === 'ar' ? 'فشل توليد الأسماء.' : 'Échec de la génération.');
+            return;
+          }
+
+          const data = await response.json();
+          setNames(data.noms || []);
+        }
       } catch (error) {
-        console.error("Erreur backend:", error);
+        console.error('Erreur backend:', error);
+        setFetchError(
+          isModeB
+            ? (lang === 'ar' ? 'تعذر الاتصال بنموذج LLM. تحقق من Ollama أو مفاتيح API.' : 'Impossible de joindre le LLM. Vérifiez Ollama ou les clés API.')
+            : (lang === 'ar' ? 'خطأ في الاتصال بالخادم.' : 'Impossible de joindre le serveur.')
+        );
       } finally {
         setLoading(false);
       }
     }
     fetchNames();
-  }, [config, lang, generationType]);
+  }, [config, lang, generationType, isModeB, typeNom, secteur, token]);
 
   const currentCard = names[currentIndex];
   const remainingCount = names.length - currentIndex;
@@ -90,17 +133,45 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
     }, 450);
   };
 
-  // ÉCRAN DE CHARGEMENT SQUELETTE
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center text-gray-400 gap-4">
         <Loader2 className="animate-spin text-purple-600" size={40} />
-        <p className="text-sm font-medium tracking-wide">BrandForge calcule vos noms sur mesure...</p>
+        <p className="text-sm font-medium tracking-wide">
+          {isModeB
+            ? (lang === 'ar' ? 'الذكاء الاصطناعي يولّد أسماء مخصصة...' : 'Le LLM génère vos noms sur mesure...')
+            : 'BrandForge calcule vos noms sur mesure...'}
+        </p>
+        {isModeB && config.modelLabel && (
+          <p className="text-[10px] text-purple-400/70 bg-purple-950/30 px-3 py-1 rounded-full border border-purple-900/30">
+            {config.modelLabel}
+          </p>
+        )}
       </div>
     );
   }
 
-  // ⚡ ÉCRAN DE GESTION DU TEXTE INCOHÉRENT
+  if (fetchError) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
+        <div className="p-8 bg-[#12141c] rounded-3xl border border-gray-900 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 animate-fade-in">
+          <span className="text-4xl">⚠️</span>
+          <h3 className="text-xl font-bold tracking-wide">
+            {lang === 'ar' ? 'خطأ في التوليد' : 'Erreur de génération'}
+          </h3>
+          <p className="text-gray-500 text-xs leading-relaxed">{fetchError}</p>
+          <button
+            onClick={onGoBack}
+            className="mt-2 w-full py-3 bg-purple-600 hover:bg-purple-700 font-bold text-white rounded-xl text-xs transition-all active:scale-95"
+          >
+            {lang === 'ar' ? 'تعديل الإعدادات' : 'Modifier mes paramètres'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ÉCRAN VIDE
   if (!loading && names.length === 0) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
@@ -128,29 +199,37 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] px-6 py-4 flex flex-col justify-between max-w-lg mx-auto animate-fade-in">
       
-      {/* TOP BARRE : COMPTEUR & RE-GÉNÉRER */}
+      {/* TOP BARRE : COMPTEUR & MODÈLE LLM */}
       <div className="w-full flex justify-between items-center text-gray-500 font-semibold text-xs">
         <button onClick={onGoBack} className="flex items-center gap-1.5 hover:text-white transition-all p-1">
           {lang === 'ar' ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
           <span>{remainingCount} {t('remaining')}</span>
         </button>
-        <button 
-          onClick={() => { setCurrentIndex(0); }} 
-          className="p-2 bg-[#12141c] hover:text-white rounded-full border border-gray-950 transition-all"
-        >
-          <RotateCcw size={14} />
-        </button>
+        <div className="flex items-center gap-2">
+          {isModeB && modelUsed && (
+            <span className="text-[10px] text-purple-400/80 bg-purple-950/30 px-2 py-0.5 rounded-full border border-purple-900/20">
+              LLM · {config.modelLabel || modelUsed}
+            </span>
+          )}
+          <button
+            onClick={() => setCurrentIndex(0)}
+            className="p-2 bg-[#12141c] hover:text-white rounded-full border border-gray-950 transition-all"
+          >
+            <RotateCcw size={14} />
+          </button>
+        </div>
       </div>
 
       {/* COMPOSANT DE VUE DE CARTE */}
       <div className="flex-1 flex flex-col items-center justify-center my-4 relative w-full gap-4">
         {currentIndex < names.length ? (
           <>
-            <BrandCard 
-              data={currentCard} 
-              animationClass={animation} 
-              index={currentIndex} 
-              config={config} 
+            <BrandCard
+              data={currentCard}
+              animationClass={animation}
+              index={currentIndex}
+              config={config}
+              isLlm={isModeB}
             />
             
             {/* ⚡ NOUVEAU BOUTON : RÉSERVATION EXPRESS DIRECTEMENT SOUS LA CARTE */}

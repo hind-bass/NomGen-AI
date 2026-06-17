@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, ArrowRight, Sparkles, Cpu, Layers } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Cpu, Layers, Loader2 } from 'lucide-react';
+
+const API_BASE = 'http://127.0.0.1:8000';
 
 export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
   const { lang, t } = useApp();
   const [prompt, setPrompt] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState('Tous'); // État pour le style sélectionné
-  const [isModeB, setIsModeB] = useState(false); // false = Mode A, true = Mode B
-  const [error, setError] = useState(''); // Gestion de l'erreur intégrée à l'interface
-  
-  // Modèles par défaut selon la langue active
-  const [selectedModel, setSelectedModel] = useState(lang === 'ar' ? 'Allam' : 'Mistral');
+  const [selectedStyle, setSelectedStyle] = useState('Tous');
+  const [isModeB, setIsModeB] = useState(false);
+  const [error, setError] = useState('');
+
+  const [llmModels, setLlmModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('');
 
   const BackIcon = lang === 'ar' ? ArrowRight : ArrowLeft;
-
-  // Liste des styles disponibles
   const stylesList = ['Tous', 'Tech', 'Food', 'Luxe'];
 
   // Traductions locales dédiées aux nouveaux paramètres de prompt et styles
@@ -28,6 +29,9 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       modeA: "Génération Rapide (Mode A)",
       modeB: "Modèles Avancés (Mode B)",
       modelLabel: "Choisir le modèle de langage (LLM)",
+      modelLoading: "Chargement des modèles...",
+      modelUnavailable: "Clé API manquante — configurez les variables d'environnement",
+      modelLocal: "Local (Ollama)",
       btnGenerate: "Générer les propositions",
       errorPrompt: "Veuillez saisir une description avant de continuer.",
       tous: "Tous",
@@ -44,6 +48,9 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       modeA: "توليد سريع (وضع أ)",
       modeB: "نماذج متقدمة (وضع ب)",
       modelLabel: "اختر نموذج اللغة الكبير (LLM)",
+      modelLoading: "جاري تحميل النماذج...",
+      modelUnavailable: "مفتاح API مفقود — راجع إعدادات الخادم",
+      modelLocal: "محلي (Ollama)",
       btnGenerate: "توليد المقترحات",
       errorPrompt: "يرجى كتابة وصف المشروع قبل المتابعة.",
       tous: "الكل",
@@ -55,10 +62,29 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
 
   const lt = (key) => localTranslations[lang][key] || key;
 
-  // Ajuster le modèle par défaut si l'utilisateur change de langue en cours de route
-  React.useEffect(() => {
-    setSelectedModel(lang === 'ar' ? 'Allam' : 'Mistral');
-  }, [lang]);
+  // Charger les modèles LLM depuis l'API backend
+  useEffect(() => {
+    if (!isModeB) return;
+
+    async function fetchModels() {
+      setModelsLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/api/models/llm-list?langue=${lang}`);
+        if (response.ok) {
+          const data = await response.json();
+          const models = data.models || [];
+          setLlmModels(models);
+          const firstAvailable = models.find((m) => m.available) || models[0];
+          if (firstAvailable) setSelectedModel(firstAvailable.key);
+        }
+      } catch (err) {
+        console.error('Erreur chargement modèles LLM:', err);
+      } finally {
+        setModelsLoading(false);
+      }
+    }
+    fetchModels();
+  }, [lang, isModeB]);
 
   // Réinitialiser les erreurs et le prompt si on bascule entre les modes
   React.useEffect(() => {
@@ -76,13 +102,18 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       return;
     }
 
-    // On transmet toutes les données de configuration configurées à CardsScreen
+    if (isModeB && !selectedModel) {
+      setError(lt('modelLoading'));
+      return;
+    }
+
     onGenerate({
-      prompt: isModeB ? prompt.trim() : '', // Pas de prompt envoyé en Mode A
+      prompt: isModeB ? prompt.trim() : '',
       mode: isModeB ? 'B' : 'A',
       model: isModeB ? selectedModel : 'nanoGPT',
-      style: selectedStyle, // Envoie le style choisi ('Tous', 'Tech', 'Food', 'Luxe')
-      generationType: generationType // Permet de savoir si on est sur 'enterprise' ou 'brand'
+      modelLabel: llmModels.find((m) => m.key === selectedModel)?.nom_affiche || selectedModel,
+      style: selectedStyle,
+      generationType,
     });
   };
 
@@ -190,25 +221,36 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
               <label className={`text-[10px] text-gray-500 font-semibold uppercase tracking-wide ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
                 {lt('modelLabel')}
               </label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className={`w-full p-3 bg-[#0b0c10] border border-gray-900 focus:border-purple-600/50 rounded-xl text-xs text-white outline-none transition-all cursor-pointer ${
-                  lang === 'ar' ? 'text-right' : 'text-left'
-                }`}
-              >
-                {lang === 'ar' ? (
-                  <>
-                    <option value="Allam" className="bg-[#12141c]">Allam (علاّم - الموصى به)</option>
-                    <option value="Fanar" className="bg-[#12141c]">Fanar (فنار)</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="Mistral" className="bg-[#12141c]">Mistral AI (Recommended)</option>
-                    <option value="Ollama" className="bg-[#12141c]">Ollama Local System</option>
-                  </>
-                )}
-              </select>
+              {modelsLoading ? (
+                <div className="flex items-center gap-2 text-gray-500 text-xs py-2">
+                  <Loader2 size={14} className="animate-spin text-purple-500" />
+                  {lt('modelLoading')}
+                </div>
+              ) : (
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className={`w-full p-3 bg-[#0b0c10] border border-gray-900 focus:border-purple-600/50 rounded-xl text-xs text-white outline-none transition-all cursor-pointer ${
+                    lang === 'ar' ? 'text-right' : 'text-left'
+                  }`}
+                >
+                  {llmModels.map((model) => (
+                    <option key={model.key} value={model.key} className="bg-[#12141c]">
+                      {model.nom_affiche}
+                      {model.env_required?.length === 0 ? ` — ${lt('modelLocal')}` : ''}
+                      {!model.available && model.env_required?.length > 0 ? ' ⚠' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {selectedModel && llmModels.find((m) => m.key === selectedModel) && (
+                <p className={`text-[10px] mt-1 ${llmModels.find((m) => m.key === selectedModel).available ? 'text-gray-600' : 'text-amber-500/80'}`}>
+                  {llmModels.find((m) => m.key === selectedModel).description}
+                  {!llmModels.find((m) => m.key === selectedModel).available && (
+                    <span className="block mt-0.5">{lt('modelUnavailable')}</span>
+                  )}
+                </p>
+              )}
             </div>
           )}
 
