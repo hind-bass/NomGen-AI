@@ -16,9 +16,20 @@ export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
   return (
     <nav className="w-full h-16 px-8 flex justify-between items-center bg-[#0b0c10] border-b border-gray-950 relative z-50">
       
-      {/* GAUCHE : LOGO UNIFIÉ */}
-      <div className="flex items-center gap-2 font-bold text-white text-sm tracking-wider">
-        <span className="p-2 bg-purple-600 rounded-xl text-sm">✨</span> BrandForge
+      {/* GAUCHE : LOGO PERSONNALISÉ UNIFIÉ */}
+      <div className="flex items-center gap-3 font-bold text-white text-sm tracking-wider select-none">
+        <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center border border-purple-500/20 shadow-md shadow-purple-950/40 bg-black/20">
+          <img 
+            src="/assets/image.png" 
+            alt="BrandForge BF Logo" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback au cas où le dossier racine d'assets diffère selon votre configuration
+              e.target.src = "src/assets/image.png";
+            }}
+          />
+        </div>
+        <span>BrandForge</span>
       </div>
 
       {/* DROITE : BLOC D'ACTIONS */}
