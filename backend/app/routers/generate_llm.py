@@ -98,10 +98,17 @@ async def generate_names_llm(
             style=req.secteur,
             temperature=req.temperature,
         )
+    except httpx.TimeoutException as e:
+        raise HTTPException(
+            status_code=504,
+            detail=f"Le LLM '{req.model_key}' a mis trop de temps à répondre (timeout). "
+                   f"Réessayez ou choisissez un modèle plus rapide."
+        )
     except Exception as e:
+        msg = str(e).strip() or type(e).__name__
         raise HTTPException(
             status_code=502,
-            detail=f"Erreur lors de l'appel au LLM '{req.model_key}': {str(e)}"
+            detail=f"Erreur lors de l'appel au LLM '{req.model_key}': {msg}"
         )
 
     # Construire la réponse avec score simple

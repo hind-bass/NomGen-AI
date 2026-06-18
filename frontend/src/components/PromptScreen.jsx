@@ -30,8 +30,9 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       modeB: "Modèles Avancés (Mode B)",
       modelLabel: "Choisir le modèle de langage (LLM)",
       modelLoading: "Chargement des modèles...",
-      modelUnavailable: "Clé API manquante — configurez les variables d'environnement",
+      modelUnavailable: "Non disponible — voir la configuration ci-dessous",
       modelLocal: "Local (Ollama)",
+      modelSetupHint: "Pour activer les modèles locaux : lancez Ollama puis « ollama pull mistral »",
       btnGenerate: "Générer les propositions",
       errorPrompt: "Veuillez saisir une description avant de continuer.",
       tous: "Tous",
@@ -49,8 +50,9 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
       modeB: "نماذج متقدمة (وضع ب)",
       modelLabel: "اختر نموذج اللغة الكبير (LLM)",
       modelLoading: "جاري تحميل النماذج...",
-      modelUnavailable: "مفتاح API مفقود — راجع إعدادات الخادم",
+      modelUnavailable: "غير متاح — راجع الإعدادات أدناه",
       modelLocal: "محلي (Ollama)",
+      modelSetupHint: "لتفعيل النماذج المحلية: شغّل Ollama ثم « ollama pull mistral »",
       btnGenerate: "توليد المقترحات",
       errorPrompt: "يرجى كتابة وصف المشروع قبل المتابعة.",
       tous: "الكل",
@@ -104,6 +106,12 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
 
     if (isModeB && !selectedModel) {
       setError(lt('modelLoading'));
+      return;
+    }
+
+    const selected = llmModels.find((m) => m.key === selectedModel);
+    if (isModeB && selected && !selected.available) {
+      setError(selected.unavailable_reason || lt('modelUnavailable'));
       return;
     }
 
@@ -235,10 +243,15 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
                   }`}
                 >
                   {llmModels.map((model) => (
-                    <option key={model.key} value={model.key} className="bg-[#12141c]">
+                    <option
+                      key={model.key}
+                      value={model.key}
+                      disabled={!model.available}
+                      className="bg-[#12141c]"
+                    >
                       {model.nom_affiche}
                       {model.env_required?.length === 0 ? ` — ${lt('modelLocal')}` : ''}
-                      {!model.available && model.env_required?.length > 0 ? ' ⚠' : ''}
+                      {!model.available ? ' ⚠' : ''}
                     </option>
                   ))}
                 </select>
@@ -247,9 +260,14 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
                 <p className={`text-[10px] mt-1 ${llmModels.find((m) => m.key === selectedModel).available ? 'text-gray-600' : 'text-amber-500/80'}`}>
                   {llmModels.find((m) => m.key === selectedModel).description}
                   {!llmModels.find((m) => m.key === selectedModel).available && (
-                    <span className="block mt-0.5">{lt('modelUnavailable')}</span>
+                    <span className="block mt-0.5">
+                      {llmModels.find((m) => m.key === selectedModel).unavailable_reason || lt('modelUnavailable')}
+                    </span>
                   )}
                 </p>
+              )}
+              {llmModels.length > 0 && !llmModels.some((m) => m.available) && (
+                <p className="text-[10px] text-amber-500/80 mt-2">{lt('modelSetupHint')}</p>
               )}
             </div>
           )}

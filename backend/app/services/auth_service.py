@@ -1,8 +1,3 @@
-"""
-Service d'authentification JWT.
-- Hash des mots de passe avec bcrypt (passlib)
-- Génération et vérification des tokens HS256 (python-jose)
-"""
 import os
 from datetime import datetime, timedelta
 from typing import Optional
@@ -10,8 +5,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-# ─── Configuration ───────────────────────────────────────────────────────────
-# En production, mettre cette valeur dans une variable d'environnement .env
+# Configuration 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "nomgen-super-secret-key-changez-moi-en-prod")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 heures
@@ -19,8 +13,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 heures
 # Contexte de hachage bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
-# ─── Mots de passe ───────────────────────────────────────────────────────────
+# Mots de passe 
 
 def hash_password(plain_password: str) -> str:
     """Retourne le hash bcrypt du mot de passe."""
@@ -32,7 +25,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-# ─── JWT ─────────────────────────────────────────────────────────────────────
+# JWT
 
 def create_access_token(
     data: dict,

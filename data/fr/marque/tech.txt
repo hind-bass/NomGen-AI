@@ -1,9 +1,10 @@
 agrialia
 agrismart
 algorix
+algolia
 alphabit
-apprendalis
 apprendix
+apprendalis
 assistalia
 assuralia
 auditoria
@@ -12,22 +13,22 @@ bistrolia
 bonappet
 brodexia
 bytewave
+byteflight
 capitalia
-centre apprendre
 champalia
 climatalia
 cloudix
 codesphere
-commercenet
 commercia
 commsmart
-competialis
-composalia
+commercenet
 compsmart
 comptalia
+composalia
+competialis
 consolidia
-constrsmart
 construcia
+constrsmart
 consultsmart
 cosmalia
 cosmetalia
@@ -36,11 +37,11 @@ créatialis
 cuisinia
 culturia
 cyberline
-datalink
 datalux
 datavox
+datalink
 delicia
-diagnostic plus
+deliverect
 digiteria
 distsmart
 ecolia
@@ -60,10 +61,8 @@ formalia
 formsmart
 francesmart
 fretalia
+fretlink
 garantia
-garcia rénovation
-garcia travaux
-garcia électricité
 gardienalia
 gastralia
 gestalia
@@ -71,39 +70,28 @@ gestsmart
 globalsmart
 gourmalia
 graphalia
+greenly
 greenalia
+greenbureau
 grossalia
 gustalia
-habitat plus
 healthia
 hospitalia
 hotexia
 immosmart
+infosyn
+informix
 infocraft
 infodepann
-informatex
-informix
-infosyn
 innotech
 innovbel
 innovbon
-innovclear
-innovflex
-innovfort
-innovgran
-innovhaut
-innovmaxi
-innovnova
-innovopti
-innovprim
-innovrapid
-innovsmart
 innovsol
-innovvel
 instructia
 investia
 juridalia
 legalalia
+legalstart
 logistalia
 logsmart
 maintenalia
@@ -120,20 +108,22 @@ métalia
 naturalia
 netpulse
 nettalia
-nettoie plus
 nettoyex
+nordine
 nordsmart
 notarialis
 numeria
 nutritia
 négocia
 omegatech
+optimix
 optimsmart
 organisalia
 parfumalia
 patrimonia
 pedagogia
 pixelrun
+pixelsmithstudios
 plastalia
 prestalia
 prévolia
@@ -154,29 +144,14 @@ soudalia
 sudsmart
 systema
 tapisseria
-techalis
 techbel
 techbon
-techclear
-techflex
-techfort
-techgran
-techhaut
-techmaxi
-technolab
-technoris
-technova
-techopti
-techprim
-techrapid
-techrepair
-techsmart
 techsol
 techvel
-techvela
 terralia
 textilia
 therapia
+toile
 toilettalia
 touralia
 tradelia
@@ -190,7 +165,6 @@ vertalia
 vestia
 viticulia
 webfusion
-algolia
 alan
 ankorstore
 backmarket
@@ -200,7 +174,6 @@ bolt
 botify
 brigad
 bundle
-byteflight
 capgemini
 capsens
 castalie
@@ -213,15 +186,12 @@ clickandboat
 comet
 contentsquare
 coorpacademy
-cozy cloud
 deezer
 deepki
 defacto
 dejamobile
 delair
-deliverect
 diabolocom
-digi school
 doctolib
 doctrine
 dolead
@@ -242,25 +212,20 @@ famoco
 farmitoo
 fasterize
 ferpection
-figaro classifieds
 flexjob
 flowdesk
 flyinblue
 forestadmin
 foxintelligence
-fretlink
 gandi
 genesis
 getaround
 getquanty
 gonogo
 gorgias
-greenbureau
-greenly
-greentech innovation
 gymlib
-happydemics
 happyquest
+happydemics
 harveys
 haystack
 heetch
@@ -268,7 +233,6 @@ holaspirit
 hook
 hopteo
 hubeecar
-hubspot france
 hyphen
 iadvize
 ideoclick
@@ -282,13 +246,11 @@ ingrid
 inokyo
 inpulse
 inqom
-instagram france
 izicap
 jobteaser
 joins
 jonak
 jumia
-kaizen solutions
 kard
 kavee
 kelio
@@ -300,16 +262,11 @@ kymono
 labster
 lamia
 leanpay
-legalstart
 lemlist
 lever
 lilo
 liqtech
-littlebig connection
 livepepper
-lmb solutions
-loop earplugs
-louvre hotels
 lumapps
 lunatech
 lydia
@@ -321,16 +278,13 @@ maximelab
 meero
 memo
 meritis
-meteo france
 mews
 miimosa
 miinto
 mindbaz
 mitto
-mobi rider
 mobilize
 modulr
-moleskine france
 monbanker
 moncarsupermarket
 mondocteur
@@ -347,33 +301,26 @@ napta
 nemorin
 neo9
 neurones
-nexity digital
 ninacloak
 nirio
 nopuntum
-nordine
 notchup
-november five
 octoparse
 okamac
 oktal
 okto
 olist
-olswang france
 oovoom
-openclassrooms
-openflyers
 openium
+openflyers
+openclassrooms
 optelec
-optimix
 orgvue
 ouihelp
 ovhcloud
-pagerduty france
 panopli
 papiris
 pappers
-parismatch digital
 particeep
 passbolt
 payfit
@@ -383,18 +330,14 @@ performa
 phoceis
 pictosoft
 piink
-pivotal labs france
-pixelsmithstudios
 pixpay
 planity
-plotly france
 pluralsite
 pmy
 poool
 powens
 powerz
 prepdd
-prevision io
 profilage
 propulso
 psycle
@@ -405,32 +348,25 @@ qonto
 quonto
 quotatis
 rainforest
-rakuten france
-ratp dev
-reachfive
 reachly
+reachfive
 recare
 recko
 redspher
 reflect
-reglo mobile
 relayr
 remakeit
 remotify
-replit france
 resolve
 retable
-reviewflowz
 revivio
+reviewflowz
 rhino
-rockerbox france
 rootsid
 runrepeat
 saegus
-salesloft france
 saymine
 scaleway
-scout enterprise
 seabird
 seechange
 selency
@@ -438,14 +374,9 @@ sendinblue
 sennder
 septime
 sesamm
-shift technology
-shopify france
-showpad france
 sigfox
 signaturit
-sinch france
 sinequa
-sista fund
 skeepers
 skillup
 skello
@@ -453,96 +384,66 @@ slite
 smartagri
 smatchit
 snapshift
-sncf connect
 socialclub
-societe generale startup
 soitec
 solency
 somfy
 spacefill
-spark archives
-speexx france
 sphereai
 spirii
 spotsie
 squadra
-standard market
-statista france
 stonly
 stormshield
 strapi
-streaming club
 studylink
 subvisual
 supertripper
-surveymonkey france
 swapcard
 swile
 syment
-synapse medicine
 synaxia
 sysdream
 tagoo
 talend
-talon one france
-taptap send
 tastevin
 tatami
-teamotiv france
 tenzing
-teradata france
 theodo
 thinkovery
-ticket for change
 tilkee
 timesulin
 tivio
-tnp consultants
 toast
-toasttab france
-toile
 toolio
-toptal france
 topicus
-toucan toco
 trackchecker
-traefik labs
 travaux
 traxalt
-tribe xr
-tripletex france
-trivia maker
 truendo
-tubemogul france
 tupi
 turfu
 uala
 ubeeqo
 ulule
 umanize
-unimog france
 upciti
 upflow
 upkey
 uplaw
 uptime
-userlane france
 utelyo
 uvaro
 valtech
 veepee
-veolia digital
-verto analytics france
 viareport
 viavoo
 videofutur
 vigicorp
 vigiware
-vinci energies digital
 virsabi
 vivatech
 vividwire
-voluum france
 vptech
 wagon
 wakam
@@ -551,23 +452,20 @@ wandercraft
 waynium
 webmecanik
 welcometothejungle
-wemaintain
 wemanity
 wemapping
+wemaintain
 wemind
 wepack
 wepresto
 westudio
 whodunit
-whosonlocation france
 widdi
 wifirst
 wildmoka
 wimi
 wing
-woorank france
 worldia
-wunderman thompson france
 xelians
 xhec
 xoolio
@@ -579,10 +477,7 @@ youscribe
 zeenea
 zefir
 zelros
-zendesk france
 zenpark
 zenly
 zerosix
 zesty
-zola france
-zynga france

@@ -1,4 +1,4 @@
-"""Interpréteur de prompt utilisateur → tokens de contrôle."""
+"""Interpréteur de prompt utilisateur -> tokens de contrôle."""
 
 KEYWORD_MAP = {
     "#L": ["luxe","luxueux","haut de gamme","premium","prestige","mode","fashion",

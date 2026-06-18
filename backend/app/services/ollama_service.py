@@ -1,8 +1,3 @@
-"""
-ollama_service.py — Mode B simplifié
-Appel direct Ollama via httpx (15 lignes) ou fallback OpenAI
-Support multilingue: Français, Arabe, Anglais
-"""
 import httpx
 import json
 import os

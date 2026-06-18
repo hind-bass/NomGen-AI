@@ -2,7 +2,13 @@
 Point d'entrée FastAPI — NomGen AI v4.0
 Jour 2 → Jour 4 : Tous les routers enregistrés.
 """
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+# Charger les clés API depuis backend/.env (OPENAI_API_KEY, MISTRAL_API_KEY, etc.)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from fastapi.middleware.cors import CORSMiddleware
 
 # ── Routers Sprint 1-4 (génération nanoGPT) ──────────────────────────────────

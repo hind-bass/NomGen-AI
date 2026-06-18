@@ -1,7 +1,4 @@
 """
-llm_service.py — Jour 2
-Service multi-LLM : l'utilisateur choisit le modèle.
-
 Modèles FRANÇAIS  : gpt-4o (OpenAI), ollama (local), deepseek, mistral
 Modèles ARABES    : allam (SDAIA), fanar (Qatar), acegpt, jais (MBZUAI)
 Fallback          : nanoGPT local si aucun LLM disponible
@@ -19,7 +16,7 @@ import httpx
 from abc import ABC, abstractmethod
 from typing import Optional
 
-# ─── Prompt engineering commun ───────────────────────────────────────────────
+#  Prompt engineering commun 
 
 SYSTEM_PROMPT_FR = """Tu es un expert en branding et naming de marques françaises.
 Génère des noms de {type_nom} dans le secteur {secteur}.
@@ -56,7 +53,7 @@ USER_PROMPT_AR_TEMPLATE = """
 """
 
 
-# ─── Classe de base ───────────────────────────────────────────────────────────
+#  Classe de base 
 
 class BaseLLMProvider(ABC):
     """Interface commune à tous les providers LLM."""
@@ -119,7 +116,7 @@ class BaseLLMProvider(ABC):
         pass
 
 
-# ─── Provider OpenAI GPT ─────────────────────────────────────────────────────
+#  Provider OpenAI GPT
 
 class OpenAIProvider(BaseLLMProvider):
     """GPT-4o / GPT-4 / GPT-3.5 via OpenAI API."""
@@ -161,7 +158,7 @@ class OpenAIProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider Mistral AI ─────────────────────────────────────────────────────
+#  Provider Mistral AI 
 
 class MistralProvider(BaseLLMProvider):
     """Mistral Large / Mistral-7B via api.mistral.ai."""
@@ -203,7 +200,7 @@ class MistralProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider DeepSeek ───────────────────────────────────────────────────────
+#  Provider DeepSeek
 
 class DeepSeekProvider(BaseLLMProvider):
     """DeepSeek-V3 / DeepSeek-Chat — compatible API OpenAI."""
@@ -245,7 +242,7 @@ class DeepSeekProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider Ollama (local) ─────────────────────────────────────────────────
+#  Provider Ollama (local) 
 
 class OllamaProvider(BaseLLMProvider):
     """Ollama local — llama3, mistral, gemma2, qwen2 ..."""
@@ -268,18 +265,30 @@ class OllamaProvider(BaseLLMProvider):
             "stream": False,
         }
 
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/chat",
-                json=payload,
-            )
-            resp.raise_for_status()
+        async with httpx.AsyncClient(timeout=120) as client:
+            try:
+                resp = await client.post(
+                    f"{self.base_url}/api/chat",
+                    json=payload,
+                )
+                resp.raise_for_status()
+            except httpx.ConnectError:
+                raise ConnectionError(
+                    "Ollama n'est pas démarré. Ouvrez l'application Ollama ou lancez : ollama serve"
+                ) from None
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise ValueError(
+                        f"Modèle '{self.model_id}' introuvable dans Ollama. "
+                        f"Exécutez : ollama pull {self.model_id}"
+                    ) from e
+                raise
             data = resp.json()
             text = data.get("message", {}).get("content", "")
             return self._parse_response(text)
 
 
-# ─── Provider Allam (SDAIA / STC — Modèle arabe saoudien) ───────────────────
+#  Provider Allam (SDAIA / STC — Modèle arabe saoudien) 
 
 class AllamProvider(BaseLLMProvider):
     """
@@ -346,7 +355,7 @@ class AllamProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider Fanar (Qatar Computing Research Institute) ─────────────────────
+#  Provider Fanar (Qatar Computing Research Institute) 
 
 class FanarProvider(BaseLLMProvider):
     """
@@ -392,7 +401,7 @@ class FanarProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider AceGPT (Arabic LLM — HKUST) ────────────────────────────────────
+#  Provider AceGPT (Arabic LLM — HKUST) 
 
 class AceGPTProvider(BaseLLMProvider):
     """
@@ -447,7 +456,7 @@ class AceGPTProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
-# ─── Provider Jais (MBZUAI — Abu Dhabi) ──────────────────────────────────────
+#  Provider Jais (MBZUAI — Abu Dhabi) 
 
 class JaisProvider(BaseLLMProvider):
     """
@@ -506,6 +515,55 @@ class JaisProvider(BaseLLMProvider):
             return self._parse_response(text)
 
 
+# ─── Vérification Ollama (local) ───────────────────────────────────────────────
+
+def _ollama_base_url() -> str:
+    return os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+
+def check_ollama_running() -> tuple[bool, str]:
+    """Vérifie si Ollama répond et retourne un message d'état."""
+    try:
+        with httpx.Client(timeout=2.0) as client:
+            resp = client.get(f"{_ollama_base_url()}/api/tags")
+            resp.raise_for_status()
+            models = resp.json().get("models", [])
+            if not models:
+                return False, (
+                    "Ollama est démarré mais aucun modèle n'est installé. "
+                    "Exécutez : ollama pull mistral"
+                )
+            return True, "OK"
+    except httpx.ConnectError:
+        return False, (
+            "Ollama n'est pas démarré. Lancez l'application Ollama ou exécutez : ollama serve"
+        )
+    except Exception as e:
+        return False, f"Ollama inaccessible : {e}"
+
+
+def check_ollama_model(model_id: str) -> tuple[bool, str]:
+    """Vérifie qu'un modèle Ollama précis est installé."""
+    running, reason = check_ollama_running()
+    if not running:
+        return False, reason
+    try:
+        with httpx.Client(timeout=2.0) as client:
+            resp = client.get(f"{_ollama_base_url()}/api/tags")
+            resp.raise_for_status()
+            installed = {m.get("name", "").split(":")[0] for m in resp.json().get("models", [])}
+            if model_id not in installed and not any(
+                name == model_id or name.startswith(f"{model_id}.") or name.startswith(f"{model_id}:")
+                for name in installed
+            ):
+                return False, (
+                    f"Modèle '{model_id}' non installé. Exécutez : ollama pull {model_id}"
+                )
+            return True, "OK"
+    except Exception as e:
+        return False, f"Erreur Ollama : {e}"
+
+
 # ─── Registre des modèles disponibles ────────────────────────────────────────
 
 AVAILABLE_MODELS = {
@@ -562,7 +620,7 @@ AVAILABLE_MODELS = {
         "langues": ["fr"],
         "description": "Meta Llama 3 en local, gratuit",
         "env_required": [],
-        "model_id": "llama3",
+        "model_id": "llama3.1",
     },
     # ── Arabe ─────────────────────────────────────────────────────────────
     "allam": {
@@ -671,33 +729,42 @@ class LLMRouter:
                 cleaned.append(name)
         return cleaned[:n]
 
+    def _is_model_available(self, key: str, cfg: dict) -> tuple[bool, str]:
+        """Vérifie la disponibilité réelle d'un modèle (clés API ou Ollama)."""
+        missing = [env for env in cfg["env_required"] if not os.getenv(env)]
+        if missing:
+            return False, f"Variables d'env manquantes : {', '.join(missing)}"
+
+        if cfg["provider"] == "ollama":
+            model_id = cfg.get("model_id", key)
+            return check_ollama_model(model_id)
+
+        return True, "OK"
+
     def get_available_models(self, langue: Optional[str] = None) -> list[dict]:
         """Retourne la liste des modèles, filtrée par langue si fournie."""
         result = []
         for key, cfg in AVAILABLE_MODELS.items():
             if langue and langue not in cfg["langues"]:
                 continue
+            available, reason = self._is_model_available(key, cfg)
             result.append({
                 "key": key,
                 "nom_affiche": cfg["nom_affiche"],
                 "langues": cfg["langues"],
                 "description": cfg["description"],
                 "env_required": cfg["env_required"],
-                "available": all(
-                    bool(os.getenv(env)) for env in cfg["env_required"]
-                ),
+                "available": available,
+                "unavailable_reason": None if available else reason,
             })
         return result
 
     def check_model_available(self, model_key: str) -> tuple[bool, str]:
-        """Vérifie si un modèle est utilisable (clés API présentes)."""
+        """Vérifie si un modèle est utilisable (clés API présentes ou Ollama actif)."""
         cfg = AVAILABLE_MODELS.get(model_key)
         if not cfg:
             return False, f"Modèle '{model_key}' inconnu."
-        missing = [env for env in cfg["env_required"] if not os.getenv(env)]
-        if missing:
-            return False, f"Variables d'env manquantes : {', '.join(missing)}"
-        return True, "OK"
+        return self._is_model_available(model_key, cfg)
 
 
 # Singleton global

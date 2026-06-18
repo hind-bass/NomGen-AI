@@ -351,7 +351,7 @@ Disponibilité:    99.9% (local) / 99% (external)
 
 ---
 
-##  Support & Deployment
+## 📞 Support & Deployment
 
 ### Local Development
 ```bash

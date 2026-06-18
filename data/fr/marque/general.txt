@@ -6,45 +6,22 @@ adminex
 agrex
 agribel
 agribon
-agriclear
-agricore
-agriflex
-agrifort
-agrigran
-agrihaut
-agrimaxi
-agrinova
-agriopti
-agriplus
-agriprim
-agrirapid
-agriservice
 agrisol
 agrivel
-andré rénovation
-andré travaux
-andré électricité
+andré
+rénovation
+travaux
+électricité
 artex
 artisalis
-artisanat plus
-artisanat sud
+artisanat
 assemblais
 assistex
 assurex
 assurplus
-ateliers du nord
+ateliers
 auditbel
 auditbon
-auditclear
-auditflex
-auditfort
-auditgran
-audithaut
-auditmaxi
-auditnova
-auditopti
-auditprim
-auditrapid
 auditsol
 auditvel
 avocalis
@@ -52,131 +29,54 @@ batiogest
 beautecore
 beauteplus
 beautycraft
-bernard rénovation
-bernard travaux
-bernard électricité
+bernard
 bienalis
 binaris
 bioenergie
 biomed
-blanc rénovation
-blanc travaux
-blanc électricité
-boyer rénovation
-boyer travaux
-boyer électricité
+blanc
 brandalis
-brasserie des alpes
+brasserie
 capitalys
 cargoplus
 caterix
-chevalier rénovation
-chevalier travaux
-chevalier électricité
+chevalier
 cleanex
-clinicalis
 clinicor
-clinique du parc
+clinique
+clinicalis
 cognitix
-coiffalis
 coiffex
+coiffalis
 commbel
 commbon
-commclear
-commercex
-commflex
-commfort
-commgran
-commhaut
-commmaxi
-commnova
-commopti
-commprim
-commrapid
 commsol
-communalis
-communex
 commvel
 compbel
 compbon
-compclear
-compflex
-compfort
-compgran
-comphaut
-compmaxi
-compnova
-compopti
-compprim
-comprapid
 compsol
-computex
 compvel
 conceptalis
 confectio
 constrbel
 constrbon
-constrclear
-constrflex
-constrfort
-constrgran
-constrhaut
-constrmaxi
-constrnova
-constropti
-constrprim
-constrrapid
 constrsol
-constructex
 constrvel
-consultbel
-consultbon
-consultclear
-consultflex
-consultfort
-consultgran
-consulthaut
-consultmaxi
-consultnova
-consultopti
-consultprim
-consultrapid
-consultsol
-consultvel
-coursier plus
-couvertalis
 couvralix
+couvertalis
 creativex
 creditalis
 cuisinex
-david rénovation
-david travaux
-david électricité
+david
 depannalis
 devcraft
 digiflow
 distbel
 distbon
-distclear
-distflex
-distfort
-distgran
-disthaut
-distmaxi
-distnova
-distopti
-distprim
-distrapid
-distributex
 distsol
 distvel
 droitplus
-dupont rénovation
-dupont travaux
-dupont électricité
-durand rénovation
-durand travaux
-durand électricité
+dupont
 ecobel
 ecobon
 ecoclear
@@ -191,176 +91,69 @@ econova
 ecoopti
 ecoprim
 ecorapid
-ecoservice
 ecosol
+ecoservice
 ecoteam
 ecovel
 elevealis
 energex
 enseignex
-entretienalis
 entretienex
+entretienalis
 envirolis
 eurobel
 eurobon
-euroclear
-euroflex
-eurofort
-eurogran
-eurohaut
-euromaxi
-euronova
-euroopti
-europrim
-eurorapid
 eurosol
 eurovel
 expedis
 fabrica
 fabrikation
 fermeplus
-ferronnerie est
+ferronnerie
 finactif
 financex
 finoptim
-flotte libre
-foncier sud
-formation plus
-formation sud
+flotte
+foncier
+formex
 formbel
 formbon
-formclear
-formex
-formflex
-formfort
-formgran
-formhaut
-formmaxi
-formnova
-formopti
-formprim
-formrapid
 formsol
-formvel
-fournier rénovation
-fournier travaux
-fournier électricité
+fournier
+françois
 francebel
 francebon
-franceclear
-franceflex
-francefort
-francegran
-francehaut
-francemaxi
-francenova
-franceopti
-franceprim
-francerapid
 francesol
-francevel
-françois rénovation
-françois travaux
-françois électricité
 fretalix
 garantex
-gardiennage bordeaux
-gardiennage grenoble
-gardiennage lyon
-gardiennage marseille
-gardiennage montpellier
-gardiennage nantes
-gardiennage paris
-gardiennage rennes
-gardiennage strasbourg
-gardiennage toulouse
-garnier rénovation
-garnier travaux
-garnier électricité
+gardiennage
+garnier
 gestbel
 gestbon
-gestclear
-gestflex
-gestfort
-gestgran
-gesthaut
-gestion plus
-gestmaxi
-gestnova
-gestopti
-gestprim
-gestrapid
+gestion
 gestsol
-gestvel
-girard rénovation
-girard travaux
-girard électricité
+girard
 globalbel
 globalbon
-globalclear
-globalflex
-globalfort
-globalgran
-globalhaut
-globalmaxi
-globalnova
-globalopti
-globalprim
-globalrapid
 globalsol
 globalvel
-guerin rénovation
-guerin travaux
-guerin électricité
+guerin
 hebergex
 huissalis
 hygienalis
 immobel
 immobon
-immoclear
-immocraft
-immoflex
-immofort
-immofrance
-immogran
-immohaut
-immomaxi
-immonova
-immoopti
-immoplus
-immoprim
-immorapid
 immosol
 immovel
-immovie
 juridex
 juridis
 jurisconsult
-laurent rénovation
-laurent travaux
-laurent électricité
+laurent
 learnplus
-lefebvre rénovation
-lefebvre travaux
-lefebvre électricité
-lefèvre rénovation
-lefèvre travaux
-lefèvre électricité
+lefebvre
 legalis
-leroy rénovation
-leroy travaux
-leroy électricité
-livraison bordeaux
-livraison express
-livraison grenoble
-livraison lyon
-livraison marseille
-livraison montpellier
-livraison nantes
-livraison paris
-livraison rennes
-livraison strasbourg
-livraison toulouse
+leroy
+livraison
 logbel
 logbon
 logclear
@@ -379,15 +172,13 @@ lograpid
 logsol
 logvel
 loisirex
-maintecore
 maintenex
 maintenix
+maintecore
 managex
 marketalis
-martin rénovation
-martin travaux
-martin électricité
-maçonnerie durand
+martin
+maçonnerie
 medbel
 medbon
 medclear
@@ -395,8 +186,8 @@ medflex
 medfort
 medgran
 medhaut
-medigroup
 medikare
+medigroup
 mediservice
 medmaxi
 mednova
@@ -405,63 +196,30 @@ medprim
 medrapid
 medsol
 medvel
-menuisalis
 menuisex
-mercier rénovation
-mercier travaux
-mercier électricité
+menuisalis
+mercier
 metalplus
-michel rénovation
-michel travaux
-michel électricité
+michel
 modalis
-moreau rénovation
-moreau travaux
-moreau électricité
-morel rénovation
-morel travaux
-morel électricité
+moreau
 mécalis
-mécanique précision
-métallurgie sud
-navette service
+mécanique
+métallurgie
+navette
 nexalink
 nexiom
 nordbel
 nordbon
-nordclear
-nordflex
-nordfort
-nordgran
-nordhaut
-nordmaxi
-nordnova
-nordopti
-nordprim
-nordrapid
 nordsol
 nordvel
 noveris
+optimed
 opticore
 optimbel
 optimbon
-optimclear
-optimed
-optimflex
-optimfort
-optimgran
-optimhaut
-optimmaxi
-optimnova
-optimopti
-optimprim
-optimrapid
-optimsol
-optimvel
 patrimotel
-petit rénovation
-petit travaux
-petit électricité
+petit
 pharmacor
 pharmadev
 pierrealis
@@ -471,54 +229,25 @@ publiex
 renewalis
 renouvelis
 rentamax
+reparis
 reparalis
 reparatek
-reparis
 ressourcealis
-richard rénovation
-richard travaux
-richard électricité
+richard
 risqualis
-robert rénovation
-robert travaux
-robert électricité
+robert
 routalis
-roux rénovation
-roux travaux
-roux électricité
+roux
 ruralalis
-rénovation bordeaux
-rénovation grenoble
-rénovation lyon
-rénovation marseille
-rénovation montpellier
-rénovation nantes
-rénovation paris
-rénovation rennes
-rénovation strasbourg
-rénovation toulouse
 santecore
 santeplus
-sejouralis
 sejouris
+sejouralis
 servbel
 servbon
-servclear
-servflex
-servfort
-servgran
-servhaut
-serviceplus
-servmaxi
-servnova
-servopti
-servprim
-servrapid
 servsol
 servvel
-simon rénovation
-simon travaux
-simon électricité
+simon
 soinsbeaute
 solaxis
 stockalis
@@ -539,72 +268,24 @@ sudsol
 sudvel
 suppalis
 synapso
-sécurité bordeaux
-sécurité grenoble
-sécurité lyon
-sécurité marseille
-sécurité montpellier
-sécurité nantes
-sécurité paris
-sécurité plus
-sécurité rennes
-sécurité strasbourg
-sécurité toulouse
+sécurité
 taxiplus
 terrealis
 therapaxis
-thomas rénovation
-thomas travaux
-thomas électricité
+thomas
 tissalis
 tourservice
 tradalis
-transaximmo
+transex
 transbel
 transbon
-transclear
-transex
-transflex
-transfort
-transgran
-transhaut
-transitex
-transmaxi
-transnova
-transopti
-transprim
-transrapid
 transsol
-transvel
-travaux bordeaux
-travaux grenoble
-travaux lyon
-travaux marseille
-travaux montpellier
-travaux nantes
-travaux paris
-travaux rennes
-travaux strasbourg
-travaux toulouse
 tutoralis
 usinex
 valoris
-vincent rénovation
-vincent travaux
-vincent électricité
+vincent
 vitralis
-voyagalis
 voyagex
+voyagalis
 windex
-électricité bordeaux
-électricité grenoble
-électricité lyon
-électricité marseille
-électricité montpellier
-électricité nantes
-électricité paris
-électricité rennes
-électricité strasbourg
-électricité toulouse
-équipement sud
 approvator
