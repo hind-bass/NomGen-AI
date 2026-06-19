@@ -250,4 +250,5 @@ propria
 propteria
 prosmart
 protexia
-transportalia
+transportalianeuralink
+neuralink

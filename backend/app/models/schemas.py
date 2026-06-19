@@ -17,6 +17,7 @@ class GeneratedName(BaseModel):
     score:   float
     langue:  str
     secteur: str
+    generation_id: Optional[int] = None
 
 
 class GenerateResponse(BaseModel):

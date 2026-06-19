@@ -9,6 +9,7 @@ Mode simplifié: appel direct Ollama ou OpenAI via httpx (15 lignes)
 import time
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlmodel import Session
@@ -18,6 +19,7 @@ from app.services.llm_service import llm_router
 from app.services.ollama_service import call_ollama, get_recommended_models
 from app.services.auth_service import decode_token
 from app.routers.history import log_generation
+from app.services.generation_store_service import save_generated_names
 
 router = APIRouter()
 
@@ -41,7 +43,8 @@ class LLMGeneratedName(BaseModel):
     score: float = 0.0
     langue: str
     secteur: str
-    source: str = "llm"          # distingue Mode A (nanogpt) de Mode B (llm)
+    source: str = "llm"
+    generation_id: Optional[int] = None
 
 
 class LLMGenerateResponse(BaseModel):
@@ -124,6 +127,20 @@ async def generate_names_llm(
         if name.strip()
     ]
 
+    # Persistance automatique + IDs pour feedback / fine-tuning
+    gen_ids = save_generated_names(
+        session=session,
+        prompt=req.prompt,
+        langue=req.langue,
+        categorie=req.secteur,
+        type_nom=req.type_nom,
+        noms=noms,
+        mode="B",
+    )
+    for i, nom in enumerate(noms):
+        if i < len(gen_ids):
+            nom.generation_id = gen_ids[i]
+
     # Log historique si connecté
     user_id = _get_optional_user_id(request)
     if user_id:
@@ -194,7 +211,21 @@ async def generate_names_ollama(
         if name.strip()
     ]
 
-    # Log
+    # Persistance automatique + IDs pour feedback / fine-tuning
+    gen_ids = save_generated_names(
+        session=session,
+        prompt=req.prompt,
+        langue=req.langue,
+        categorie=req.secteur,
+        type_nom=req.type_nom,
+        noms=result_noms,
+        mode="B",
+    )
+    for i, nom in enumerate(result_noms):
+        if i < len(gen_ids):
+            nom.generation_id = gen_ids[i]
+
+    # Log historique si connecté
     user_id = _get_optional_user_id(request)
     if user_id:
         log_generation(

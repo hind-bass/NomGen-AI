@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "NomGen — Feedback & Favoris",
+    "description": "Exemples de requêtes pour le système de votes SQLite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "generation_id", "value": "1" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Générer des noms (Mode A — enregistre automatiquement)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"marque de luxe pour parfums naturels\",\n  \"secteur\": \"LUXE\",\n  \"langue\": \"fr\",\n  \"n\": 3\n}"
+        },
+        "url": "{{base_url}}/api/generate"
+      }
+    },
+    {
+      "name": "2. Générer des noms (Mode B LLM)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"startup tech intelligence artificielle\",\n  \"model_key\": \"ollama-mistral\",\n  \"langue\": \"fr\",\n  \"secteur\": \"TECH\",\n  \"type_nom\": \"societe\",\n  \"n\": 5\n}"
+        },
+        "url": "{{base_url}}/api/generate-llm"
+      }
+    },
+    {
+      "name": "3. Like une génération",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"generation_id\": {{generation_id}}\n}"
+        },
+        "url": "{{base_url}}/feedback/like"
+      }
+    },
+    {
+      "name": "4. Dislike une génération",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"generation_id\": {{generation_id}}\n}"
+        },
+        "url": "{{base_url}}/feedback/dislike"
+      }
+    },
+    {
+      "name": "5. Ajouter aux favoris",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"generation_id\": {{generation_id}}\n}"
+        },
+        "url": "{{base_url}}/favorites/add"
+      }
+    },
+    {
+      "name": "6. Lister les favoris",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/favorites"
+      }
+    },
+    {
+      "name": "7. Statistiques feedback",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/feedback/stats?top_n=5",
+          "host": ["{{base_url}}"],
+          "path": ["feedback", "stats"],
+          "query": [{ "key": "top_n", "value": "5" }]
+        }
+      }
+    },
+    {
+      "name": "8. Like avec authentification JWT",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"generation_id\": {{generation_id}}\n}"
+        },
+        "url": "{{base_url}}/feedback/like"
+      }
+    },
+    {
+      "name": "9. Login (obtenir token)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@nomgen.ai\",\n  \"password\": \"admin123456\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Globe, Heart, User, LogOut, PlusCircle } from 'lucide-react';
+import logoImage from '../assets/image.png';
 
 export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
   const { lang, setLang, favorites, user, logoutUser } = useApp();
@@ -20,13 +21,9 @@ export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
       <div className="flex items-center gap-3 font-bold text-white text-sm tracking-wider select-none">
         <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center border border-purple-500/20 shadow-md shadow-purple-950/40 bg-black/20">
           <img 
-            src="/assets/image.png" 
+            src={logoImage} 
             alt="BrandForge BF Logo" 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              // Fallback au cas où le dossier racine d'assets diffère selon votre configuration
-              e.target.src = "src/assets/image.png";
-            }}
           />
         </div>
         <span>BrandForge</span>

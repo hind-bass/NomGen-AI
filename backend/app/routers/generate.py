@@ -14,6 +14,7 @@ from app.database import get_session
 from app.models.schemas import GenerateRequest, GenerateResponse
 from app.services.nomgen_core import NomGenService
 from app.routers.history import log_generation
+from app.services.generation_store_service import save_generated_names
 
 # Import optionnel du user (ne bloque pas si non connecté)
 from fastapi import Request
@@ -82,7 +83,21 @@ async def generate_names(
             seed=req.seed,
         )
 
-        # ⚡ NOUVEAU : Log dans l'historique si l'utilisateur est connecté
+        # Persistance automatique + IDs pour feedback / fine-tuning
+        gen_ids = save_generated_names(
+            session=session,
+            prompt=req.prompt,
+            langue=req.langue,
+            categorie=req.secteur,
+            type_nom="marque",
+            noms=result["noms"],
+            mode="A",
+        )
+        for i, nom_dict in enumerate(result["noms"]):
+            if i < len(gen_ids):
+                nom_dict["generation_id"] = gen_ids[i]
+
+        # Log dans l'historique si l'utilisateur est connecté
         user_id = _get_optional_user_id(request)
         if user_id:
             log_generation(

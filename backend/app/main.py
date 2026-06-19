@@ -32,6 +32,10 @@ from app.routers.profile       import router as profile_router
 # ── Routers Admin ──────────────────────────────────────────────────────────────
 from app.routers.admin         import router as admin_router
 
+# ── Routers Feedback & Favoris (votes) ───────────────────────────────────────
+from app.api.feedback          import router as feedback_router
+from app.api.favoris           import router as favoris_votes_router
+
 # ── Base de données ───────────────────────────────────────────────────────────
 from app.database import create_db_and_tables
 from app.seeder   import seed_admin
@@ -50,6 +54,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -81,6 +87,10 @@ app.include_router(profile_router)         # /api/profile
 
 # Admin
 app.include_router(admin_router)           # /api/admin/...
+
+# Feedback & votes (SQLite : generations, feedback, favoris)
+app.include_router(feedback_router)        # POST /feedback/like|dislike, GET /feedback/stats
+app.include_router(favoris_votes_router)   # POST /favorites/add, GET /favorites
 
 
 # ── Événement de démarrage ────────────────────────────────────────────────────
@@ -116,5 +126,18 @@ async def root():
             "admin_suggestions_list": "GET /api/admin/suggestions",
             "admin_suggestions_add": "POST /api/admin/suggestions/add",
             "admin_suggestions_review": "PATCH /api/admin/suggestions/:id",
+            "admin_reservations": "GET /api/admin/reservations",
+            "admin_reservations_stats": "GET /api/admin/reservations/stats",
+            "admin_reservation_update": "PATCH /api/admin/reservations/:id",
+            "admin_reservation_delete": "DELETE /api/admin/reservations/:id",
+            "admin_training_stats": "GET /api/admin/training/stats",
+            "admin_training_export": "GET /api/admin/training/export",
+            "admin_training_sync": "POST /api/admin/training/sync-datasets",
+            "local_llm_models": "ollama-llama31 | ollama-qwen25 | ollama-mistral",
+            "feedback_like": "POST /feedback/like",
+            "feedback_dislike": "POST /feedback/dislike",
+            "feedback_stats": "GET /feedback/stats",
+            "favorites_add": "POST /favorites/add",
+            "favorites_list": "GET /favorites",
         }
     }

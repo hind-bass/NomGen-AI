@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, ArrowRight, Sparkles, Cpu, Layers, Loader2 } from 'lucide-react';
-
-const API_BASE = 'http://127.0.0.1:8000';
+import AppIcon from './AppIcon';
+import { API_BASE } from '../config/api';
 
 export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
   const { lang, t } = useApp();
@@ -251,7 +251,7 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
                     >
                       {model.nom_affiche}
                       {model.env_required?.length === 0 ? ` — ${lt('modelLocal')}` : ''}
-                      {!model.available ? ' ⚠' : ''}
+                      {!model.available ? (lang === 'ar' ? ' — غير متاح' : ' — indisponible') : ''}
                     </option>
                   ))}
                 </select>
@@ -274,10 +274,11 @@ export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
 
           {/* ⚡ INTERFACE : MESSAGE D'ERREUR TEXTUEL INTÉGRÉ (S'AFFICHERA SEULEMENT EN MODE B SI VIDE) */}
           {error && isModeB && (
-            <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium animate-fade-in ${
-              lang === 'ar' ? 'text-right' : 'text-left'
+            <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium animate-fade-in flex items-start gap-2 ${
+              lang === 'ar' ? 'text-right flex-row-reverse' : 'text-left'
             }`}>
-              ⚠️ {error}
+              <AppIcon name="warning" size={16} alt="" className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 

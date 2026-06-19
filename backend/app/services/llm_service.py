@@ -15,6 +15,9 @@ import asyncio
 import httpx
 from abc import ABC, abstractmethod
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 #  Prompt engineering commun 
 
@@ -245,15 +248,41 @@ class DeepSeekProvider(BaseLLMProvider):
 #  Provider Ollama (local) 
 
 class OllamaProvider(BaseLLMProvider):
-    """Ollama local — llama3, mistral, gemma2, qwen2 ..."""
+    """Ollama local — Llama 3.1, Qwen 2.5, Mistral (spécialisé naming FR/AR)."""
 
     def __init__(self, model_id: str = "mistral", langue: str = "fr"):
         super().__init__(model_id, langue)
         self.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
+    def _build_specialized_prompts(
+        self, prompt: str, n: int, type_nom: str, secteur: str, style: str
+    ) -> tuple[str, str]:
+        """
+        Prompts enrichis avec datasets statiques + retours SQLite (likes, favoris, réservations).
+        Fallback vers les prompts de base si la DB est inaccessible.
+        """
+        try:
+            from sqlmodel import Session
+            from app.database.connection import engine
+            from app.services.local_naming_service import LocalNamingService
+
+            with Session(engine) as session:
+                naming = LocalNamingService(session)
+                system_prompt = naming.build_specialized_system_prompt(
+                    self.langue, type_nom, secteur, style
+                )
+                user_prompt = naming.build_specialized_user_prompt(prompt, n, self.langue)
+                return system_prompt, user_prompt
+        except Exception:
+            return (
+                self._build_system_prompt(type_nom, secteur, style),
+                self._build_user_prompt(prompt, n),
+            )
+
     async def generate(self, prompt, n, type_nom, secteur, style, temperature):
-        system_prompt = self._build_system_prompt(type_nom, secteur, style)
-        user_prompt   = self._build_user_prompt(prompt, n)
+        system_prompt, user_prompt = self._build_specialized_prompts(
+            prompt, n, type_nom, secteur, style
+        )
 
         payload = {
             "model": self.model_id,
@@ -610,17 +639,46 @@ AVAILABLE_MODELS = {
         "provider": "ollama",
         "nom_affiche": "Mistral 7B (Local Ollama)",
         "langues": ["fr"],
-        "description": "100% local, aucune clé API requise",
+        "description": "100% local, spécialisé naming FR via datasets + feedback",
         "env_required": [],
         "model_id": "mistral",
+        "specialized": True,
+    },
+    "ollama-llama31": {
+        "provider": "ollama",
+        "nom_affiche": "Llama 3.1 8B (Local Ollama)",
+        "langues": ["fr", "ar"],
+        "description": "Meta Llama 3.1 — naming FR/AR avec few-shot datasets",
+        "env_required": [],
+        "model_id": "llama3.1",
+        "specialized": True,
     },
     "ollama-llama3": {
         "provider": "ollama",
-        "nom_affiche": "Llama 3 8B (Local Ollama)",
-        "langues": ["fr"],
-        "description": "Meta Llama 3 en local, gratuit",
+        "nom_affiche": "Llama 3.1 8B (alias)",
+        "langues": ["fr", "ar"],
+        "description": "Alias vers llama3.1",
         "env_required": [],
         "model_id": "llama3.1",
+        "specialized": True,
+    },
+    "ollama-qwen25": {
+        "provider": "ollama",
+        "nom_affiche": "Qwen 2.5 7B (Local Ollama)",
+        "langues": ["fr", "ar"],
+        "description": "Alibaba Qwen 2.5 — excellent multilingue FR/AR",
+        "env_required": [],
+        "model_id": "qwen2.5",
+        "specialized": True,
+    },
+    "ollama-qwen2-ar": {
+        "provider": "ollama",
+        "nom_affiche": "Qwen 2.5 Arabic (Local Ollama)",
+        "langues": ["ar"],
+        "description": "Alias Qwen 2.5 pour l'arabe",
+        "env_required": [],
+        "model_id": "qwen2.5",
+        "specialized": True,
     },
     # ── Arabe ─────────────────────────────────────────────────────────────
     "allam": {
@@ -651,14 +709,6 @@ AVAILABLE_MODELS = {
         "langues": ["ar"],
         "description": "LLM open-source d'Abu Dhabi, arabe haute qualité",
         "env_required": ["HUGGINGFACE_API_KEY"],
-    },
-    "ollama-qwen2-ar": {
-        "provider": "ollama",
-        "nom_affiche": "Qwen2 7B Arabic (Local Ollama)",
-        "langues": ["ar"],
-        "description": "Alibaba Qwen2 en local, bon support arabe",
-        "env_required": [],
-        "model_id": "qwen2",
     },
 }
 

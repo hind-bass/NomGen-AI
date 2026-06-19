@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+.env.*
+# Node
+node_modules/
+frontend/dist/
+
+# Runtime / local
+backend/nomgen.db
+backend/server.log
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Pytest
+.pytest_cache/
+htmlcov/

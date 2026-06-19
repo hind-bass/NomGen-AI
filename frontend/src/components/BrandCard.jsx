@@ -25,8 +25,16 @@ export default function BrandCard({ data, animationClass, index, config, isLlm =
   // Nettoie et traduit la valeur de manière dynamique
   const translatedStyle = t(rawStyle.toLowerCase().trim());
 
+  // Taille de police adaptée à la longueur du nom
+  const nameLen = (data.nom || '').length;
+  const nameSizeClass =
+    nameLen > 16 ? 'text-xl sm:text-2xl' :
+    nameLen > 12 ? 'text-2xl sm:text-3xl' :
+    nameLen > 8  ? 'text-3xl sm:text-4xl' :
+    'text-4xl sm:text-5xl';
+
   return (
-    <div className={`w-full max-w-sm aspect-[3/4] rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-br ${currentGradient} border ${animationClass}`}>
+    <div className={`w-full max-w-md aspect-[3/4] rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-br ${currentGradient} border ${animationClass}`}>
       
       {/* EFFET GRAPHIQUE EN ARRIÈRE-PLAN */}
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] z-0" />
@@ -47,11 +55,11 @@ export default function BrandCard({ data, animationClass, index, config, isLlm =
       </div>
 
       {/* NOM CENTRAL DE LA MARQUE */}
-      <div className="z-10 text-center flex flex-col items-center justify-center flex-1 relative">
-        <h2 className="absolute text-5xl md:text-6xl font-serif font-black text-white/10 italic scale-110 select-none blur-[2px]">
+      <div className="z-10 text-center flex flex-col items-center justify-center flex-1 relative w-full min-w-0 px-2">
+        <h2 className={`absolute font-serif font-black text-white/10 italic scale-110 select-none blur-[2px] break-words max-w-full leading-tight ${nameSizeClass}`}>
           {data.nom}
         </h2>
-        <h2 className="text-4xl md:text-5xl font-sans font-extrabold text-white tracking-wide drop-shadow-md relative">
+        <h2 className={`font-sans font-extrabold text-white tracking-wide drop-shadow-md relative break-words max-w-full leading-tight hyphens-auto ${nameSizeClass}`}>
           {data.nom}
         </h2>
         {data.score && (

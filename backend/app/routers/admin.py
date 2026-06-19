@@ -8,18 +8,22 @@ GET    /api/admin/suggestions         — lister les suggestions avec filtrage
 POST   /api/admin/suggestions/add     — ajouter une suggestion directe (vérification doublon)
 PATCH  /api/admin/suggestions/:id     — valider/rejeter une suggestion
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.dependencies import get_current_admin
-from app.models.db_models import Suggestion, User
+from app.models.db_models import Reservation, Suggestion, User
 from app.services.auth_service import hash_password
+from app.services.training_dataset_service import TrainingDatasetService
+from app.services.local_naming_service import LOCAL_MODELS
+from app.services.dataset_loader_service import count_dataset_names
 
 router = APIRouter(prefix="/api/admin", tags=["Administration"])
 
@@ -60,6 +64,39 @@ class SuggestionReview(BaseModel):
     action: str                         # "approve" | "reject"
 
 
+class ReservationAdminRead(BaseModel):
+    id: int
+    nom: str
+    langue: str
+    secteur: str
+    user_id: int
+    user_email: str
+    stripe_url: str | None
+    expires_at: str | None
+    is_paid: bool
+    created_at: str
+    status: str                         # "pending" | "paid" | "expired"
+    forfait: str = "free"
+    client_nom: str | None = None
+    client_prenom: str | None = None
+    client_email: str | None = None
+    card_last4: str | None = None
+    card_expiry: str | None = None
+    payment_status: str = "pending"
+
+
+class ReservationStats(BaseModel):
+    total: int
+    pending: int
+    paid: int
+    expired: int
+
+
+class ReservationUpdate(BaseModel):
+    action: str                         # "mark_paid" | "mark_unpaid" | "extend"
+    days: Optional[int] = 30            # utilisé avec action "extend"
+
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _dataset_path(langue: str, secteur: str, type_nom: str) -> Path:
@@ -77,6 +114,17 @@ def _nom_existe_dans_fichier(path: Path, nom: str) -> bool:
     with open(path, encoding="utf-8") as f:
         noms_existants = {line.strip().lower() for line in f if line.strip()}
     return nom.lower().strip() in noms_existants
+
+
+def _nom_existe_dans_dataset(langue: str, type_nom: str, nom: str) -> bool:
+    """Vérifie si le nom existe déjà dans data/{lang}/{type}/."""
+    type_dir = DATA_DIR / langue.lower().strip() / type_nom.lower().strip()
+    if not type_dir.is_dir():
+        return False
+    for path in type_dir.glob("*.txt"):
+        if _nom_existe_dans_fichier(path, nom):
+            return True
+    return False
 
 
 def _nom_existe_en_base(session: Session, nom: str, langue: str, secteur: str) -> bool:
@@ -101,6 +149,39 @@ def _ajouter_au_dataset(path: Path, nom: str):
     if not _nom_existe_dans_fichier(path, nom_clean):
         with open(path, "a", encoding="utf-8") as f:
             f.write(nom_clean + "\n")
+
+
+def _reservation_status(reservation: Reservation) -> str:
+    """Calcule le statut métier d'une réservation."""
+    if reservation.is_paid:
+        return "paid"
+    if reservation.expires_at and reservation.expires_at <= datetime.utcnow():
+        return "expired"
+    return "pending"
+
+
+def _reservation_to_admin_read(reservation: Reservation, user_email: str) -> ReservationAdminRead:
+    """Sérialise une réservation pour l'espace admin."""
+    return ReservationAdminRead(
+        id=reservation.id,
+        nom=reservation.nom,
+        langue=reservation.langue,
+        secteur=reservation.secteur,
+        user_id=reservation.user_id,
+        user_email=user_email,
+        stripe_url=reservation.stripe_url,
+        expires_at=reservation.expires_at.isoformat() if reservation.expires_at else None,
+        is_paid=reservation.is_paid,
+        created_at=reservation.created_at.isoformat(),
+        status=_reservation_status(reservation),
+        forfait=getattr(reservation, "forfait", "free") or "free",
+        client_nom=getattr(reservation, "client_nom", None),
+        client_prenom=getattr(reservation, "client_prenom", None),
+        client_email=getattr(reservation, "client_email", None),
+        card_last4=getattr(reservation, "card_last4", None),
+        card_expiry=getattr(reservation, "card_expiry", None),
+        payment_status=getattr(reservation, "payment_status", "pending") or "pending",
+    )
 
 
 # ─── Endpoints : Gestion des utilisateurs ─────────────────────────────────────
@@ -356,15 +437,17 @@ def review_suggestion(
         )
 
     if req.action == "approve":
-        # Vérifier que le nom n'existe pas déjà dans le dataset
         dataset_file = _dataset_path(suggestion.langue, suggestion.secteur, suggestion.type_nom)
-        if _nom_existe_dans_fichier(dataset_file, suggestion.nom):
+        if _nom_existe_dans_dataset(suggestion.langue, suggestion.type_nom, suggestion.nom):
+            suggestion.status = "rejected"
+            suggestion.reviewed_at = datetime.utcnow()
+            session.add(suggestion)
+            session.commit()
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"'{suggestion.nom}' existe déjà dans le dataset.",
+                detail=f"'{suggestion.nom}' existe déjà dans data/{suggestion.langue}/{suggestion.type_nom}/ — suggestion rejetée.",
             )
 
-        # Ajouter au dataset
         _ajouter_au_dataset(dataset_file, suggestion.nom)
         suggestion.status = "approved"
 
@@ -385,3 +468,218 @@ def review_suggestion(
         "suggestion_id": suggestion_id,
         "status": suggestion.status,
     }
+
+
+# ─── Endpoints : Gestion des réservations ─────────────────────────────────────
+
+@router.get("/reservations/stats", response_model=ReservationStats)
+def reservation_stats(
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """Statistiques globales des réservations (admin uniquement)."""
+    reservations = session.exec(select(Reservation)).all()
+    stats = {"total": 0, "pending": 0, "paid": 0, "expired": 0}
+    for r in reservations:
+        stats["total"] += 1
+        stats[_reservation_status(r)] += 1
+    return ReservationStats(**stats)
+
+
+@router.get("/reservations", response_model=list[ReservationAdminRead])
+def list_all_reservations(
+    status_filter: Optional[str] = None,   # pending | paid | expired
+    search: Optional[str] = None,
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """
+    Lister toutes les demandes de réservation (admin uniquement).
+    Filtres optionnels : statut et recherche par nom ou email utilisateur.
+    """
+    if status_filter and status_filter not in ["pending", "paid", "expired"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Statut invalide. Doit être 'pending', 'paid' ou 'expired'.",
+        )
+
+    rows = session.exec(
+        select(Reservation, User.email)
+        .join(User, User.id == Reservation.user_id)
+        .order_by(Reservation.created_at.desc())
+    ).all()
+
+    results: list[ReservationAdminRead] = []
+    search_lower = search.lower().strip() if search else None
+
+    for reservation, user_email in rows:
+        item = _reservation_to_admin_read(reservation, user_email)
+
+        if status_filter and item.status != status_filter:
+            continue
+
+        if search_lower:
+            if search_lower not in item.nom.lower() and search_lower not in user_email.lower():
+                continue
+
+        results.append(item)
+
+    return results
+
+
+@router.patch("/reservations/{reservation_id}", response_model=ReservationAdminRead)
+def update_reservation(
+    reservation_id: int,
+    req: ReservationUpdate,
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """
+    Mettre à jour une réservation (admin uniquement).
+    Actions : mark_paid, mark_unpaid, extend (prolonger l'expiration).
+    """
+    reservation = session.get(Reservation, reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Réservation introuvable.")
+
+    user = session.get(User, reservation.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur associé introuvable.")
+
+    if req.action == "mark_paid":
+        reservation.is_paid = True
+        reservation.payment_status = "validated"
+    elif req.action == "mark_unpaid":
+        reservation.is_paid = False
+        reservation.payment_status = "pending"
+    elif req.action == "extend":
+        days = req.days or 30
+        if days < 1 or days > 365:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La durée doit être entre 1 et 365 jours.",
+            )
+        base = reservation.expires_at or datetime.utcnow()
+        if base < datetime.utcnow():
+            base = datetime.utcnow()
+        reservation.expires_at = base + timedelta(days=days)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Action invalide. Doit être 'mark_paid', 'mark_unpaid' ou 'extend'.",
+        )
+
+    session.add(reservation)
+    session.commit()
+    session.refresh(reservation)
+
+    return _reservation_to_admin_read(reservation, user.email)
+
+
+@router.delete("/reservations/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_reservation_admin(
+    reservation_id: int,
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """Supprimer une réservation (admin uniquement)."""
+    reservation = session.get(Reservation, reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Réservation introuvable.")
+    session.delete(reservation)
+    session.commit()
+
+
+# ─── Endpoints : Datasets & Fine-tuning ───────────────────────────────────────
+
+@router.get("/training/stats")
+def training_stats(
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """
+    Statistiques sur les données collectées (likes, favoris, réservations)
+    disponibles pour le fine-tuning continu.
+    """
+    service = TrainingDatasetService(session)
+    stats = service.get_stats()
+    stats["local_models"] = LOCAL_MODELS
+    stats["static_breakdown"] = count_dataset_names()
+    return stats
+
+
+@router.get("/training/local-models")
+def list_local_models(admin: User = Depends(get_current_admin)):
+    """Liste des modèles LLM open source locaux recommandés (Ollama)."""
+    return {
+        "models": [
+            {"key": k, **v} for k, v in LOCAL_MODELS.items()
+        ],
+        "setup": [
+            "1. Installer Ollama : https://ollama.com",
+            "2. Télécharger un modèle : ollama pull llama3.1",
+            "3. Utiliser Mode B avec model_key : ollama-llama31",
+        ],
+    }
+
+
+@router.get("/training/export")
+def export_training_dataset(
+    format: str = "jsonl",
+    langue: Optional[str] = None,
+    categorie: Optional[str] = None,
+    include_negative: bool = False,
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """
+    Exporte un dataset de fine-tuning depuis SQLite.
+    Formats : jsonl (Llama/Qwen), alpaca, csv
+    """
+    if format not in ("jsonl", "alpaca", "csv"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Format invalide. Utilisez : jsonl, alpaca, csv.",
+        )
+    if langue and langue not in ("fr", "ar"):
+        raise HTTPException(status_code=422, detail="Langue invalide : fr ou ar.")
+
+    service = TrainingDatasetService(session)
+
+    if format == "jsonl":
+        content = service.export_jsonl(langue, categorie, include_negative)
+        filename = f"nomgen_finetuning_{langue or 'all'}.jsonl"
+        media = "application/jsonl"
+    elif format == "alpaca":
+        content = service.export_alpaca(langue, categorie)
+        filename = f"nomgen_alpaca_{langue or 'all'}.jsonl"
+        media = "application/jsonl"
+    else:
+        content = service.export_csv(langue, categorie)
+        filename = f"nomgen_training_{langue or 'all'}.csv"
+        media = "text/csv"
+
+    if not content.strip():
+        raise HTTPException(
+            status_code=404,
+            detail="Aucune donnée disponible. Générez des noms et collectez des likes/favoris.",
+        )
+
+    return PlainTextResponse(
+        content=content,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/training/sync-datasets")
+def sync_training_to_static_datasets(
+    admin: User = Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    """
+    Synchronise les noms validés (likes, favoris, réservations payées)
+    vers les fichiers data/ pour enrichir le few-shot et préparer le fine-tuning.
+    """
+    service = TrainingDatasetService(session)
+    return service.sync_positive_to_static_datasets()

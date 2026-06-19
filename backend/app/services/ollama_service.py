@@ -10,11 +10,11 @@ SYSTEM_PROMPTS = {
     "en": "You are a branding expert. Generate {n} unique names. JSON format only: [\"name1\", \"name2\", ...]",
 }
 
-# Modèles recommandés par langue
+# Modèles Ollama open source recommandés pour le naming FR/AR
 RECOMMENDED_MODELS = {
-    "fr": ["mistral", "dolphin-mixtral", "neural-chat"],
-    "ar": ["allam", "fanar", "acegpt"],  # Modèles arabes spécialisés
-    "en": ["mistral", "neural-chat"],
+    "fr": ["llama3.1", "qwen2.5", "mistral"],
+    "ar": ["qwen2.5", "llama3.1"],
+    "en": ["llama3.1", "mistral"],
 }
 
 

@@ -288,4 +288,5 @@ vitralis
 voyagex
 voyagalis
 windex
-approvator
+approvatorsonaore
+sonaore

@@ -322,6 +322,64 @@ class TestReservations:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# BLOC 5b — Admin Réservations (4 tests)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestAdminReservations:
+
+    def test_admin_list_reservations(self, client):
+        """Test : admin peut lister toutes les réservations."""
+        user_token = register_and_login(client, "adminresa_user@test.ai")
+        client.post(
+            "/api/reservations/",
+            json={"nom": "AdminTestName", "langue": "fr", "secteur": "TECH"},
+            headers=auth_headers(user_token),
+        )
+        admin_tok = admin_token(client)
+        resp = client.get("/api/admin/reservations", headers=auth_headers(admin_tok))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) >= 1
+        assert any(r["nom"] == "AdminTestName" for r in data)
+
+    def test_admin_reservation_stats(self, client):
+        """Test : statistiques des réservations."""
+        admin_tok = admin_token(client)
+        resp = client.get("/api/admin/reservations/stats", headers=auth_headers(admin_tok))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "total" in data
+        assert "pending" in data
+        assert "paid" in data
+        assert "expired" in data
+
+    def test_admin_mark_paid(self, client):
+        """Test : admin marque une réservation comme payée."""
+        user_token = register_and_login(client, "adminresa_pay@test.ai")
+        add_resp = client.post(
+            "/api/reservations/",
+            json={"nom": "PayTestName", "langue": "fr", "secteur": "LUXE"},
+            headers=auth_headers(user_token),
+        )
+        resa_id = add_resp.json()["id"]
+        admin_tok = admin_token(client)
+        resp = client.patch(
+            f"/api/admin/reservations/{resa_id}",
+            json={"action": "mark_paid"},
+            headers=auth_headers(admin_tok),
+        )
+        assert resp.status_code == 200
+        assert resp.json()["is_paid"] is True
+        assert resp.json()["status"] == "paid"
+
+    def test_admin_reservations_forbidden_for_user(self, client):
+        """Test : un utilisateur normal ne peut pas accéder aux réservations admin."""
+        user_token = register_and_login(client, "adminresa_forbidden@test.ai")
+        resp = client.get("/api/admin/reservations", headers=auth_headers(user_token))
+        assert resp.status_code == 403
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # BLOC 6 — Profil & Santé (2 tests)
 # ═══════════════════════════════════════════════════════════════════════════════
 

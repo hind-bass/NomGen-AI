@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Check, X, ArrowLeft, Loader2, Users, MessageSquare,
-  UserPlus, Shield, ShieldOff, Trash2, ToggleLeft, ToggleRight
+  UserPlus, Shield, ShieldOff, Trash2, ToggleLeft, ToggleRight,
+  CreditCard, Clock, Search, ExternalLink, RefreshCw, CalendarPlus,
+  Database, Download, Brain, BookOpen
 } from 'lucide-react';
-
-const API_BASE = 'http://127.0.0.1:8000';
+import AppIcon from './AppIcon';
+import { API_BASE } from '../config/api';
 
 export default function AdminDashboard({ onGoBack }) {
   const { lang, token, user: currentUser } = useApp();
@@ -13,10 +15,17 @@ export default function AdminDashboard({ onGoBack }) {
 
   const [suggestions, setSuggestions] = useState([]);
   const [users, setUsers] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [reservationStats, setReservationStats] = useState({ total: 0, pending: 0, paid: 0, expired: 0 });
+  const [reservationFilter, setReservationFilter] = useState('');
+  const [reservationSearch, setReservationSearch] = useState('');
+  const [trainingStats, setTrainingStats] = useState(null);
+  const [localModels, setLocalModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [finetuningGuideOpen, setFinetuningGuideOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ email: '', password: '', role: 'user', is_active: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,12 +42,12 @@ export default function AdminDashboard({ onGoBack }) {
   };
 
   const fetchSuggestions = useCallback(async () => {
-    const response = await fetch(`${API_BASE}/api/suggestions`, {
+    const response = await fetch(`${API_BASE}/api/admin/suggestions?status_filter=pending`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (response.ok) {
       const data = await response.json();
-      setSuggestions(data.filter((s) => s.status === 'pending') || []);
+      setSuggestions(data || []);
     }
   }, [token]);
 
@@ -51,11 +60,60 @@ export default function AdminDashboard({ onGoBack }) {
     }
   }, [token]);
 
+  const fetchReservations = useCallback(async (statusFilter = '', search = '') => {
+    const params = new URLSearchParams();
+    if (statusFilter) params.set('status_filter', statusFilter);
+    if (search.trim()) params.set('search', search.trim());
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    const response = await fetch(`${API_BASE}/api/admin/reservations${qs}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (response.ok) {
+      setReservations(await response.json());
+    }
+  }, [token]);
+
+  const fetchReservationStats = useCallback(async () => {
+    const response = await fetch(`${API_BASE}/api/admin/reservations/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (response.ok) {
+      setReservationStats(await response.json());
+    }
+  }, [token]);
+
+  const fetchTrainingStats = useCallback(async () => {
+    const response = await fetch(`${API_BASE}/api/admin/training/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (response.ok) {
+      setTrainingStats(await response.json());
+    }
+  }, [token]);
+
+  const fetchLocalModels = useCallback(async () => {
+    const response = await fetch(`${API_BASE}/api/admin/training/local-models`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setLocalModels(data.models || []);
+    }
+  }, [token]);
+
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        await Promise.all([fetchSuggestions(), fetchUsers()]);
+        await Promise.all([
+          fetchSuggestions(),
+          fetchUsers(),
+          fetchReservations(),
+          fetchReservationStats(),
+          fetchTrainingStats(),
+          fetchLocalModels(),
+        ]);
       } catch (error) {
         console.error('Erreur de chargement admin:', error);
       } finally {
@@ -63,24 +121,40 @@ export default function AdminDashboard({ onGoBack }) {
       }
     }
     load();
-  }, [fetchSuggestions, fetchUsers]);
+  }, [fetchSuggestions, fetchUsers, fetchReservations, fetchReservationStats, fetchTrainingStats, fetchLocalModels]);
+
+  useEffect(() => {
+    if (activeTab !== 'reservations') return;
+    fetchReservations(reservationFilter, reservationSearch);
+  }, [activeTab, reservationFilter, reservationSearch, fetchReservations]);
 
   const handleModerate = async (id, action) => {
     try {
-      const response = await fetch(`${API_BASE}/api/suggestions/${id}/${action}`, {
+      const response = await fetch(`${API_BASE}/api/admin/suggestions/${id}`, {
         method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: authHeaders,
+        body: JSON.stringify({ action }),
       });
+      const data = await response.json().catch(() => ({}));
       if (response.ok) {
         setSuggestions((prev) => prev.filter((item) => item.id !== id));
         showMessage(
           action === 'approve'
-            ? t('Suggestion approuvée et intégrée !', 'تم قبول الاقتراح وإضافته!')
+            ? t('Suggestion approuvée et ajoutée au dataset !', 'تم قبول الاقتراح وإضافته!')
             : t('Suggestion rejetée.', 'تم رفض الاقتراح.')
         );
+      } else {
+        const detail = typeof data.detail === 'string'
+          ? data.detail
+          : t('Erreur lors de la modération.', 'خطأ أثناء المراجعة.');
+        showMessage(detail);
+        if (response.status === 409) {
+          setSuggestions((prev) => prev.filter((item) => item.id !== id));
+        }
       }
     } catch (error) {
       console.error('Erreur modération:', error);
+      showMessage(t('Impossible de joindre le serveur.', 'تعذر الاتصال بالخادم.'));
     }
   };
 
@@ -149,6 +223,122 @@ export default function AdminDashboard({ onGoBack }) {
     }
   };
 
+  const refreshReservations = async () => {
+    await Promise.all([
+      fetchReservations(reservationFilter, reservationSearch),
+      fetchReservationStats(),
+    ]);
+  };
+
+  const handleReservationAction = async (reservationId, action, days = 30) => {
+    try {
+      const body = action === 'extend' ? { action, days } : { action };
+      const response = await fetch(`${API_BASE}/api/admin/reservations/${reservationId}`, {
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setReservations((prev) => prev.map((r) => (r.id === reservationId ? updated : r)));
+        await fetchReservationStats();
+        const labels = {
+          mark_paid: t('Réservation marquée comme payée.', 'تم تحديد الحجز كمدفوع.'),
+          mark_unpaid: t('Paiement annulé.', 'تم إلغاء الدفع.'),
+          extend: t('Expiration prolongée.', 'تم تمديد تاريخ الانتهاء.'),
+        };
+        showMessage(labels[action] || t('Réservation mise à jour.', 'تم تحديث الحجز.'));
+      } else {
+        const data = await response.json().catch(() => ({}));
+        showMessage(data.detail || t('Erreur lors de la mise à jour.', 'خطأ أثناء التحديث.'));
+      }
+    } catch {
+      showMessage(t('Impossible de joindre le serveur.', 'تعذر الاتصال بالخادم.'));
+    }
+  };
+
+  const handleDeleteReservation = async (reservationId) => {
+    if (!window.confirm(t('Supprimer cette réservation ?', 'حذف هذا الحجز؟'))) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/reservations/${reservationId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+        await fetchReservationStats();
+        showMessage(t('Réservation supprimée.', 'تم حذف الحجز.'));
+      } else {
+        const data = await response.json().catch(() => ({}));
+        showMessage(data.detail || t('Erreur lors de la suppression.', 'خطأ أثناء الحذف.'));
+      }
+    } catch {
+      showMessage(t('Impossible de joindre le serveur.', 'تعذر الاتصال بالخادم.'));
+    }
+  };
+
+  const statusBadge = (status) => {
+    const styles = {
+      pending: 'bg-amber-950/40 text-amber-400 border-amber-900/30',
+      paid: 'bg-emerald-950/40 text-emerald-400 border-emerald-900/30',
+      expired: 'bg-red-950/40 text-red-400 border-red-900/30',
+    };
+    const labels = {
+      pending: t('En attente', 'قيد الانتظار'),
+      paid: t('Payée', 'مدفوعة'),
+      expired: t('Expirée', 'منتهية'),
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border ${styles[status] || styles.pending}`}>
+        {labels[status] || status}
+      </span>
+    );
+  };
+
+  const handleExportTraining = async (format, langue = '') => {
+    try {
+      const params = new URLSearchParams({ format });
+      if (langue) params.set('langue', langue);
+      const response = await fetch(`${API_BASE}/api/admin/training/export?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        showMessage(data.detail || t('Export impossible.', 'تعذر التصدير.'));
+        return;
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nomgen_training_${langue || 'all'}.${format === 'csv' ? 'csv' : 'jsonl'}`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      showMessage(t('Dataset exporté.', 'تم تصدير مجموعة البيانات.'));
+    } catch {
+      showMessage(t('Impossible de joindre le serveur.', 'تعذر الاتصال بالخادم.'));
+    }
+  };
+
+  const handleSyncDatasets = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/training/sync-datasets`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        await fetchTrainingStats();
+        showMessage(data.message || t('Synchronisation réussie.', 'تمت المزامنة بنجاح.'));
+      } else {
+        const data = await response.json().catch(() => ({}));
+        showMessage(data.detail || t('Erreur de synchronisation.', 'خطأ في المزامنة.'));
+      }
+    } catch {
+      showMessage(t('Impossible de joindre le serveur.', 'تعذر الاتصال بالخادم.'));
+    }
+  };
+
   const formatDate = (iso) => {
     try {
       return new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar-MA' : 'fr-FR', {
@@ -179,7 +369,10 @@ export default function AdminDashboard({ onGoBack }) {
             {t('Dashboard Administrateur', 'لوحة تحكم المشرف')}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            {t('Modérez les suggestions et gérez les comptes utilisateurs.', 'راجع الاقتراحات وأدر حسابات المستخدمين.')}
+            {t(
+              'Modérez les suggestions, gérez les utilisateurs et les réservations.',
+              'راجع الاقتراحات وأدر المستخدمين والحجوزات.'
+            )}
           </p>
         </div>
         <button
@@ -223,6 +416,33 @@ export default function AdminDashboard({ onGoBack }) {
             {users.length}
           </span>
         </button>
+        <button
+          onClick={() => setActiveTab('reservations')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'reservations'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/30'
+              : 'bg-[#12141c] text-gray-400 border border-gray-900 hover:text-white'
+          }`}
+        >
+          <CreditCard size={14} />
+          {t('Réservations', 'الحجوزات')}
+          {reservationStats.pending > 0 && (
+            <span className="bg-amber-950/60 text-amber-300 px-1.5 py-0.5 rounded-full text-[10px]">
+              {reservationStats.pending}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('datasets')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeTab === 'datasets'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/30'
+              : 'bg-[#12141c] text-gray-400 border border-gray-900 hover:text-white'
+          }`}
+        >
+          <Database size={14} />
+          {t('Datasets', 'مجموعات البيانات')}
+        </button>
       </div>
 
       {/* TOAST */}
@@ -236,17 +456,18 @@ export default function AdminDashboard({ onGoBack }) {
       {activeTab === 'moderation' && (
         <div className="bg-[#12141c] border border-gray-900 rounded-2xl overflow-hidden shadow-xl">
           {suggestions.length === 0 ? (
-            <div className="text-center py-16 text-gray-600 text-xs space-y-2">
-              <p className="text-3xl">☕</p>
+            <div className="text-center py-16 text-gray-600 text-xs space-y-2 flex flex-col items-center">
+              <AppIcon name="coffeeEmpty" size={48} alt="" />
               <p>{t('Aucune suggestion en attente pour le moment.', 'لا توجد اقتراحات معلقة حالياً.')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-900 text-gray-500 font-bold text-[10px] tracking-wider uppercase bg-[#161922]/50">
+                    <tr className="border-b border-gray-900 text-gray-500 font-bold text-[10px] tracking-wider uppercase bg-[#161922]/50">
                     <th className="p-4">{t('Nom suggéré', 'الاسم المقترح')}</th>
-                    <th className="p-4">{t('Catégorie', 'التصنيف')}</th>
+                    <th className="p-4">{t('Type', 'النوع')}</th>
+                    <th className="p-4">{t('Secteur', 'القطاع')}</th>
                     <th className="p-4">{t('Langue', 'اللغة')}</th>
                     <th className="p-4 text-center w-32">Actions</th>
                   </tr>
@@ -256,8 +477,13 @@ export default function AdminDashboard({ onGoBack }) {
                     <tr key={item.id} className="hover:bg-[#161922]/30 transition-all">
                       <td className="p-4 font-bold text-white tracking-wide">{item.nom}</td>
                       <td className="p-4">
+                        <span className="bg-purple-950/40 text-purple-300 border border-purple-900/30 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold">
+                          {item.type_nom || 'marque'}
+                        </span>
+                      </td>
+                      <td className="p-4">
                         <span className="bg-gray-900 border border-gray-800 text-gray-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold">
-                          {item.categorie}
+                          {item.secteur || item.categorie}
                         </span>
                       </td>
                       <td className="p-4 text-gray-400 uppercase">{item.langue}</td>
@@ -303,8 +529,8 @@ export default function AdminDashboard({ onGoBack }) {
 
           <div className="bg-[#12141c] border border-gray-900 rounded-2xl overflow-hidden shadow-xl">
             {users.length === 0 ? (
-              <div className="text-center py-16 text-gray-600 text-xs space-y-2">
-                <p className="text-3xl">👤</p>
+              <div className="text-center py-16 text-gray-600 text-xs space-y-2 flex flex-col items-center">
+                <AppIcon name="userEmpty" size={48} alt="" />
                 <p>{t('Aucun utilisateur enregistré.', 'لا يوجد مستخدمون.')}</p>
               </div>
             ) : (
@@ -384,6 +610,392 @@ export default function AdminDashboard({ onGoBack }) {
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── ONGLET RÉSERVATIONS ── */}
+      {activeTab === 'reservations' && (
+        <div className="space-y-4">
+          {/* Statistiques */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { key: 'total', label: t('Total', 'الإجمالي'), color: 'text-white', bg: 'bg-[#12141c]' },
+              { key: 'pending', label: t('En attente', 'قيد الانتظار'), color: 'text-amber-400', bg: 'bg-amber-950/20' },
+              { key: 'paid', label: t('Payées', 'مدفوعة'), color: 'text-emerald-400', bg: 'bg-emerald-950/20' },
+              { key: 'expired', label: t('Expirées', 'منتهية'), color: 'text-red-400', bg: 'bg-red-950/20' },
+            ].map(({ key, label, color, bg }) => (
+              <div key={key} className={`${bg} border border-gray-900 rounded-xl p-4 text-center`}>
+                <p className={`text-2xl font-black ${color}`}>{reservationStats[key] ?? 0}</p>
+                <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Filtres et recherche */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: '', label: t('Toutes', 'الكل') },
+                { value: 'pending', label: t('En attente', 'قيد الانتظار') },
+                { value: 'paid', label: t('Payées', 'مدفوعة') },
+                { value: 'expired', label: t('Expirées', 'منتهية') },
+              ].map(({ value, label }) => (
+                <button
+                  key={value || 'all'}
+                  onClick={() => setReservationFilter(value)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    reservationFilter === value
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-[#12141c] text-gray-400 border border-gray-900 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <div className="relative flex-1 sm:w-56">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+                <input
+                  type="text"
+                  value={reservationSearch}
+                  onChange={(e) => setReservationSearch(e.target.value)}
+                  placeholder={t('Nom ou email...', 'اسم أو بريد...')}
+                  className="w-full pl-9 pr-3 py-2 bg-[#12141c] border border-gray-900 rounded-xl text-xs text-white placeholder-gray-600 outline-none focus:border-purple-600/50"
+                />
+              </div>
+              <button
+                onClick={refreshReservations}
+                className="px-3 py-2 bg-[#12141c] border border-gray-900 rounded-xl text-gray-400 hover:text-white transition-all"
+                title={t('Actualiser', 'تحديث')}
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Tableau des réservations */}
+          <div className="bg-[#12141c] border border-gray-900 rounded-2xl overflow-hidden shadow-xl">
+            {reservations.length === 0 ? (
+              <div className="text-center py-16 text-gray-600 text-xs space-y-2 flex flex-col items-center">
+                <AppIcon name="clipboardEmpty" size={48} alt="" />
+                <p>{t('Aucune réservation trouvée.', 'لا توجد حجوزات.')}</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-900 text-gray-500 font-bold text-[10px] tracking-wider uppercase bg-[#161922]/50">
+                      <th className="p-4">{t('Nom réservé', 'الاسم المحجوز')}</th>
+                      <th className="p-4">{t('Client', 'العميل')}</th>
+                      <th className="p-4">{t('Forfait', 'الباقة')}</th>
+                      <th className="p-4">{t('Statut', 'الحالة')}</th>
+                      <th className="p-4">{t('Créée le', 'تاريخ الإنشاء')}</th>
+                      <th className="p-4 text-center w-40">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-900/60 text-xs font-medium">
+                    {reservations.map((r) => (
+                      <tr key={r.id} className="hover:bg-[#161922]/30 transition-all">
+                        <td className="p-4">
+                          <span className="font-bold text-white tracking-wide">{r.nom}</span>
+                          <span className="block text-[10px] text-gray-600 uppercase mt-0.5">{r.langue}</span>
+                        </td>
+                        <td className="p-4 text-gray-400">
+                          {r.client_prenom || r.client_nom ? (
+                            <>
+                              <span className="block text-white font-medium">{r.client_prenom} {r.client_nom}</span>
+                              <span className="block text-[10px]">{r.client_email || r.user_email}</span>
+                              {r.card_last4 && (
+                                <span className="block text-[10px] text-gray-600 mt-0.5">
+                                  **** {r.card_last4} · {r.card_expiry || '—'}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            r.user_email
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-purple-950/40 text-purple-300 border border-purple-900/30 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold">
+                            {r.forfait || 'free'}
+                          </span>
+                        </td>
+                        <td className="p-4">{statusBadge(r.status)}</td>
+                        <td className="p-4 text-gray-500">{formatDate(r.created_at)}</td>
+                        <td className="p-4">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {!r.is_paid && (
+                              <button
+                                onClick={() => handleReservationAction(r.id, 'mark_paid')}
+                                className="w-8 h-8 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all"
+                                title={t('Marquer payée', 'تحديد كمدفوعة')}
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+                            {r.is_paid && (
+                              <button
+                                onClick={() => handleReservationAction(r.id, 'mark_unpaid')}
+                                className="w-8 h-8 rounded-lg bg-amber-950/40 text-amber-400 border border-amber-900/30 flex items-center justify-center hover:bg-amber-600 hover:text-white transition-all"
+                                title={t('Annuler paiement', 'إلغاء الدفع')}
+                              >
+                                <Clock size={14} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleReservationAction(r.id, 'extend', 30)}
+                              className="w-8 h-8 rounded-lg bg-blue-950/40 text-blue-400 border border-blue-900/30 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"
+                              title={t('Prolonger 30 jours', 'تمديد 30 يوماً')}
+                            >
+                              <CalendarPlus size={14} />
+                            </button>
+                            {r.stripe_url && (
+                              <a
+                                href={r.stripe_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-8 h-8 rounded-lg bg-purple-950/40 text-purple-400 border border-purple-900/30 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-all"
+                                title={t('Lien Stripe', 'رابط Stripe')}
+                              >
+                                <ExternalLink size={14} />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteReservation(r.id)}
+                              className="w-8 h-8 rounded-lg bg-red-950/40 text-red-400 border border-red-900/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all"
+                              title={t('Supprimer', 'حذف')}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── ONGLET DATASETS & FINE-TUNING ── */}
+      {activeTab === 'datasets' && trainingStats && (
+        <div className="space-y-4">
+          {/* Stats collecte SQLite */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { key: 'positive_samples', label: t('Échantillons +', 'عينات إيجابية'), color: 'text-emerald-400' },
+              { key: 'negative_samples', label: t('Échantillons −', 'عينات سلبية'), color: 'text-red-400' },
+              { label: t('Dataset statique', 'مجموعة ثابتة'), value: trainingStats.static_dataset_names, color: 'text-white' },
+              { label: t('Prêt fine-tuning', 'جاهز للتدريب'), ready: trainingStats.ready_for_finetuning, color: trainingStats.ready_for_finetuning ? 'text-emerald-400' : 'text-amber-400' },
+            ].map((item, i) => (
+              <div key={i} className="bg-[#12141c] border border-gray-900 rounded-xl p-4 text-center">
+                <p className={`text-2xl font-black ${item.color} flex items-center justify-center min-h-[2rem]`}>
+                  {item.ready != null ? (
+                    item.ready ? <AppIcon name="check" size={24} alt="" /> : '—'
+                  ) : (
+                    item.value ?? trainingStats[item.key] ?? 0
+                  )}
+                </p>
+                <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">{item.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Modèles LLM locaux */}
+          <div className="bg-[#12141c] border border-gray-900 rounded-2xl p-5 space-y-3">
+            <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2">
+              <Brain size={16} />
+              {t('Modèles LLM open source (Mode B local)', 'نماذج LLM مفتوحة المصدر')}
+            </h3>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {localModels.map((m) => (
+                <div key={m.key} className="bg-[#0b0c10] border border-gray-900 rounded-xl p-3 text-xs">
+                  <p className="font-bold text-white">{m.label}</p>
+                  <p className="text-gray-500 mt-1">{m.langues?.join(', ')}</p>
+                  <code className="block mt-2 text-[10px] text-purple-400 bg-purple-950/30 px-2 py-1 rounded">
+                    {m.pull_cmd}
+                  </code>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-600">
+              {t(
+                'Ces modèles utilisent automatiquement vos datasets + likes/favoris/réservations pour enrichir les prompts.',
+                'تستخدم هذه النماذج تلقائياً مجموعات البيانات + الإعجابات/المفضلة/الحجوزات لإثراء المطالبات.'
+              )}
+            </p>
+          </div>
+
+          {/* Actions export & sync */}
+          <div className="bg-[#12141c] border border-gray-900 rounded-2xl p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Download size={16} className="text-emerald-400" />
+                {t('Export fine-tuning', 'تصدير للتدريب الدقيق')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setFinetuningGuideOpen(true)}
+                className="px-3 py-2 bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/40 text-purple-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+              >
+                <BookOpen size={14} />
+                {t('Guide fine-tuning', 'دليل التدريب الدقيق')}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => handleExportTraining('jsonl')} className="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold">
+                JSONL {t('(Llama/Qwen)', '')}
+              </button>
+              <button onClick={() => handleExportTraining('jsonl', 'fr')} className="px-3 py-2 bg-[#1f2833] border border-gray-800 hover:border-purple-600/50 rounded-xl text-xs font-bold">
+                JSONL FR
+              </button>
+              <button onClick={() => handleExportTraining('jsonl', 'ar')} className="px-3 py-2 bg-[#1f2833] border border-gray-800 hover:border-purple-600/50 rounded-xl text-xs font-bold">
+                JSONL AR
+              </button>
+              <button onClick={() => handleExportTraining('alpaca')} className="px-3 py-2 bg-[#1f2833] border border-gray-800 hover:border-purple-600/50 rounded-xl text-xs font-bold">
+                Alpaca
+              </button>
+              <button onClick={() => handleExportTraining('csv')} className="px-3 py-2 bg-[#1f2833] border border-gray-800 hover:border-purple-600/50 rounded-xl text-xs font-bold">
+                CSV
+              </button>
+              <button onClick={handleSyncDatasets} className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                <RefreshCw size={12} />
+                {t('Sync → data/', 'مزامنة → data/')}
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-600">
+              {t(
+                `Minimum recommandé : ${trainingStats.recommended_min_samples} échantillons positifs. Sources : likes, favoris, réservations payées.`,
+                `الحد الأدنى الموصى به: ${trainingStats.recommended_min_samples} عينة. المصادر: الإعجابات، المفضلة، الحجوزات المدفوعة.`
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE GUIDE FINE-TUNING */}
+      {finetuningGuideOpen && trainingStats && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in"
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
+          onClick={() => setFinetuningGuideOpen(false)}
+        >
+          <div
+            className="bg-[#12141c] border border-purple-900/30 rounded-3xl p-6 max-w-lg w-full text-white shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-gray-900 pb-3">
+              <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2">
+                <BookOpen size={16} />
+                {t('Guide fine-tuning', 'دليل التدريب الدقيق')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setFinetuningGuideOpen(false)}
+                className="text-gray-500 hover:text-white font-bold text-lg bg-[#1f2833]/40 w-8 h-8 rounded-full flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={`rounded-xl p-3 text-xs border ${
+              trainingStats.ready_for_finetuning
+                ? 'bg-emerald-950/30 border-emerald-900/40 text-emerald-300'
+                : 'bg-amber-950/30 border-amber-900/40 text-amber-300'
+            }`}>
+              {trainingStats.ready_for_finetuning ? (
+                t(
+                  `Prêt : ${trainingStats.positive_samples} échantillons positifs (seuil ${trainingStats.recommended_min_samples} atteint).`,
+                  `جاهز: ${trainingStats.positive_samples} عينة إيجابية (تم بلوغ الحد ${trainingStats.recommended_min_samples}).`
+                )
+              ) : (
+                t(
+                  `En cours : ${trainingStats.positive_samples}/${trainingStats.recommended_min_samples} échantillons positifs. Encouragez les likes, favoris et réservations payées.`,
+                  `قيد التقدم: ${trainingStats.positive_samples}/${trainingStats.recommended_min_samples} عينة. شجّع الإعجابات والمفضلة والحجوزات المدفوعة.`
+                )
+              )}
+            </div>
+
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              {t(
+                'Les échantillons + proviennent des likes, favoris et réservations payées. Les − proviennent des dislikes. L\'app n\'entraîne pas le modèle automatiquement : vous exportez les données puis fine-tunez en local.',
+                'العينات + من الإعجابات والمفضلة والحجوزات المدفوعة. العينات − من عدم الإعجاب. التطبيق لا يدرّب النموذج تلقائياً: تصدّر البيانات ثم تدرّب محلياً.'
+              )}
+            </p>
+
+            <ol className="space-y-3 text-xs">
+              {[
+                {
+                  title: t('Sync → data/ (effet immédiat)', 'مزامنة → data/ (فوري)'),
+                  body: t(
+                    'Cliquez « Sync → data/ » pour copier les noms validés dans le dossier data/. Améliore tout de suite le Mode A (nanoGPT) et le few-shot du Mode B, sans réentraînement.',
+                    'انقر « مزامنة → data/ » لنسخ الأسماء المعتمدة إلى مجلد data/. يحسّن فوراً الوضع A و few-shot للوضع B دون إعادة تدريب.'
+                  ),
+                  action: handleSyncDatasets,
+                  actionLabel: t('Lancer la sync', 'بدء المزامنة'),
+                },
+                {
+                  title: t('Exporter le dataset JSONL', 'تصدير JSONL'),
+                  body: t(
+                    'Téléchargez « JSONL (Llama/Qwen) » (ou JSONL FR / AR). Format compatible Llama 3.1 et Qwen 2.5 pour le fine-tuning.',
+                    'حمّل « JSONL (Llama/Qwen) » (أو FR / AR). متوافق مع Llama 3.1 و Qwen 2.5.'
+                  ),
+                  action: () => handleExportTraining('jsonl'),
+                  actionLabel: t('Exporter JSONL', 'تصدير JSONL'),
+                },
+                {
+                  title: t('Installer Ollama + modèle', 'تثبيت Ollama + النموذج'),
+                  body: t(
+                    'Sur votre machine : installez Ollama (ollama.com), puis par ex. ollama pull llama3.1 ou ollama pull qwen2.5.',
+                    'على جهازك: ثبّت Ollama (ollama.com)، ثم مثلاً ollama pull llama3.1 أو ollama pull qwen2.5.'
+                  ),
+                },
+                {
+                  title: t('Fine-tuner en local (hors app)', 'التدريب الدقيق محلياً'),
+                  body: t(
+                    'Utilisez le fichier .jsonl avec LLaMA-Factory, Unsloth ou la doc Ollama fine-tuning. Entraînez sur vos likes/favoris/réservations.',
+                    'استخدم ملف .jsonl مع LLaMA-Factory أو Unsloth أو وثائق Ollama. درّب على الإعجابات/المفضلة/الحجوزات.'
+                  ),
+                },
+                {
+                  title: t('Utiliser en Mode B', 'الاستخدام في الوضع B'),
+                  body: t(
+                    'Dans l\'app, choisissez Mode B et un modèle local : ollama-llama31, ollama-qwen25 ou ollama-mistral. Les prompts restent enrichis par SQLite + data/.',
+                    'في التطبيق، اختر الوضع B ونموذجاً محلياً: ollama-llama31 أو ollama-qwen25 أو ollama-mistral.'
+                  ),
+                },
+              ].map((step, i) => (
+                <li key={i} className="flex gap-3 bg-[#0b0c10] border border-gray-900 rounded-xl p-3">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-purple-600 text-white text-[10px] font-black flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <div className="space-y-1.5 min-w-0">
+                    <p className="font-bold text-white">{step.title}</p>
+                    <p className="text-gray-500 leading-relaxed">{step.body}</p>
+                    {step.action && (
+                      <button
+                        type="button"
+                        onClick={() => { step.action(); setFinetuningGuideOpen(false); }}
+                        className="mt-1 px-2.5 py-1 bg-purple-600/80 hover:bg-purple-600 rounded-lg text-[10px] font-bold"
+                      >
+                        {step.actionLabel}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <p className="text-[10px] text-gray-600 border-t border-gray-900 pt-3">
+              {t(
+                'Note : le Mode B enrichit déjà les prompts avec likes/favoris en direct. Sync et export accélèrent et pérennisent cette amélioration.',
+                'ملاحظة: الوضع B يُثرِي المطالبات تلقائياً. المزامنة والتصدير يثبتان هذا التحسين.'
+              )}
+            </p>
           </div>
         </div>
       )}

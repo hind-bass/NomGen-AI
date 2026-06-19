@@ -1,17 +1,37 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { API_BASE } from '../config/api';
 
 const AppContext = createContext();
 
-// Fonction utilitaire interne pour décoder le JWT et lire le rôle sans dépendance externe
 const parseJwt = (token) => {
   try {
-    return JSON.parse(atob(token.split('.')[1]));
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+    return payload;
   } catch (e) {
     return null;
   }
 };
 
-// Dictionnaire de traduction pour basculer toute l'interface
+const getInitialAuth = () => {
+  const stored = localStorage.getItem('token');
+  if (!stored) {
+    return { token: null, user: null, userRole: 'user' };
+  }
+  const decoded = parseJwt(stored);
+  if (!decoded) {
+    localStorage.removeItem('token');
+    return { token: null, user: null, userRole: 'user' };
+  }
+  return {
+    token: stored,
+    user: { email: decoded.sub, id: decoded.user_id, role: decoded.role },
+    userRole: decoded.role || 'user',
+  };
+};
+
 const translations = {
   fr: {
     title: "Nommez votre vision",
@@ -80,35 +100,59 @@ const translations = {
 };
 
 export const AppProvider = ({ children }) => {
+  const initialAuth = getInitialAuth();
   const [lang, setLang] = useState('fr');
   const [favorites, setFavorites] = useState([]);
-  
-  // ⚡ ÉTATS D'AUTHENTIFICATION AVANCÉS & PERSISTANTS
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [user, setUser] = useState(null); 
-  const [userRole, setUserRole] = useState('user'); // 'user' ou 'admin'
+  const [token, setToken] = useState(initialAuth.token);
+  const [user, setUser] = useState(initialAuth.user);
+  const [userRole, setUserRole] = useState(initialAuth.userRole);
 
-  // Écouteur de Token pour synchroniser le rôle, l'utilisateur et le localStorage
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
       const decoded = parseJwt(token);
       if (decoded) {
         setUserRole(decoded.role || 'user');
-        // Si l'état user est vide mais qu'on a un token valide, on reconstruit le profil minimal
         if (!user) {
           setUser({ email: decoded.sub, id: decoded.user_id });
         }
       }
     } else {
-      // ⚡ CORRECTION : Si le token devient null, on nettoie TOUT immédiatement de manière stricte
       localStorage.removeItem('token');
       setUser(null);
       setUserRole('user');
+      setFavorites([]);
     }
   }, [token]);
 
-  // Inversion automatique du sens de lecture de la page (RTL / LTR)
+  // Charger les favoris persistants depuis SQLite au login / refresh
+  useEffect(() => {
+    if (!token) return;
+
+    async function loadFavorites() {
+      try {
+        const response = await fetch(`${API_BASE}/api/favorites/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFavorites(
+            data.map((f) => ({
+              id: f.id,
+              nom: f.nom,
+              score: f.score,
+              langue: f.langue,
+              secteur: f.secteur,
+            }))
+          );
+        }
+      } catch (e) {
+        console.error('Erreur chargement favoris:', e);
+      }
+    }
+    loadFavorites();
+  }, [token]);
+
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
@@ -116,45 +160,106 @@ export const AppProvider = ({ children }) => {
 
   const t = (key) => translations[lang][key] || key;
 
-  // ⚡ Fonctions d'authentification globales adaptées au JWT
   const loginUser = (userData, receivedToken) => {
-    setUser(userData);
-    if (receivedToken) {
-      setToken(receivedToken);
-      const decoded = parseJwt(receivedToken);
-      if (decoded) {
-        setUserRole(decoded.role || 'user');
+    if (!receivedToken) return;
+    const decoded = parseJwt(receivedToken);
+    if (!decoded) return;
+    localStorage.setItem('token', receivedToken);
+    setToken(receivedToken);
+    setUserRole(decoded.role || 'user');
+    setUser({
+      email: decoded.sub || userData?.email,
+      id: decoded.user_id,
+      role: decoded.role || 'user',
+    });
+  };
+
+  const logoutUser = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    setUserRole('user');
+    setToken(null);
+    setFavorites([]);
+  };
+
+  const addFavorite = useCallback(async (nameObj) => {
+    if (!nameObj?.nom) return;
+    if (favorites.some((f) => f.nom === nameObj.nom)) return;
+
+    const payload = {
+      nom: nameObj.nom,
+      score: nameObj.score || 0,
+      langue: nameObj.langue || 'fr',
+      secteur: nameObj.secteur || nameObj.style || 'GENERAL',
+    };
+
+    if (token) {
+      try {
+        const response = await fetch(`${API_BASE}/api/favorites/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (response.ok) {
+          const saved = await response.json();
+          setFavorites((prev) => [
+            ...prev,
+            {
+              id: saved.id,
+              nom: saved.nom,
+              score: saved.score,
+              langue: saved.langue,
+              secteur: saved.secteur,
+              generation_id: nameObj.generation_id,
+            },
+          ]);
+          // Alimente aussi la table favoris (fine-tuning)
+          if (nameObj.generation_id) {
+            fetch(`${API_BASE}/favorites/add`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ generation_id: nameObj.generation_id }),
+            }).catch(() => {});
+          }
+          return;
+        }
+        if (response.status === 409) return; // déjà en favoris
+      } catch (e) {
+        console.error('Erreur sauvegarde favori:', e);
       }
     }
-  };
 
-  // ⚡ CORRECTION SÉCURISÉE DE LA DÉCONNEXION (Évite l'effet figé/statique)
-  const logoutUser = () => {
-    localStorage.removeItem('token'); // Nettoyage physique instantané du stockage local
-    setUser(null);                    // Réinitialisation immédiate du profil de l'utilisateur
-    setUserRole('user');              // Remise à zéro instantanée du rôle par défaut
-    setToken(null);                   // Alerte instantanée de l'application pour re-render l'AuthScreen
-  };
+    setFavorites((prev) => [...prev, { ...nameObj, ...payload }]);
+  }, [favorites, token]);
 
-  // Fonction pour ajouter un favori s'il n'existe pas déjà
-  const addFavorite = (nameObj) => {
-    if (nameObj && !favorites.some(fav => fav.nom === nameObj.nom)) {
-      setFavorites([...favorites, nameObj]);
+  const removeFavorite = useCallback(async (idOrNom) => {
+    const fav = favorites.find((f) => f.id === idOrNom || f.nom === idOrNom);
+    if (!fav) return;
+
+    if (token && fav.id) {
+      try {
+        await fetch(`${API_BASE}/api/favorites/${fav.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (e) {
+        console.error('Erreur suppression favori:', e);
+      }
     }
-  };
+    setFavorites((prev) => prev.filter((f) => f.nom !== fav.nom));
+  }, [favorites, token]);
 
-  // Fonction pour supprimer un favori
-  const removeFavorite = (name) => {
-    setFavorites(favorites.filter(fav => fav.nom !== name));
-  };
-
-  // EXPORT CSV
   const exportToCSV = () => {
     if (favorites.length === 0) return;
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + ["Nom,Secteur,Langue,Score"].join(",") + "\n"
-      + favorites.map(f => `"${f.nom}","${f.secteur || ''}","${f.langue || ''}",${f.score || ''}`).join("\n");
-    
+      + favorites.map((f) => `"${f.nom}","${f.secteur || ''}","${f.langue || ''}",${f.score || ''}`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -164,13 +269,11 @@ export const AppProvider = ({ children }) => {
     document.body.removeChild(link);
   };
 
-  // EXPORT JSON
   const exportToJSON = () => {
     if (favorites.length === 0) return;
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
       JSON.stringify(favorites, null, 2)
     )}`;
-    
     const link = document.createElement("a");
     link.setAttribute("href", jsonString);
     link.setAttribute("download", "brandforge_favorites.json");
@@ -180,20 +283,20 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ 
-      lang, 
-      setLang, 
-      t, 
-      token,        // Export du jeton JWT brut
-      user,         // Export de l'état utilisateur (email, id)
-      userRole,     // Export du rôle explicite ('admin' ou 'user')
-      loginUser,    // Fonction de connexion
-      logoutUser,   // Fonction de déconnexion
-      favorites, 
-      addFavorite, 
-      removeFavorite, 
-      exportToCSV, 
-      exportToJSON
+    <AppContext.Provider value={{
+      lang,
+      setLang,
+      t,
+      token,
+      user,
+      userRole,
+      loginUser,
+      logoutUser,
+      favorites,
+      addFavorite,
+      removeFavorite,
+      exportToCSV,
+      exportToJSON,
     }}>
       {children}
     </AppContext.Provider>

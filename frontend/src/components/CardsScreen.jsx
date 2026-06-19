@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import BrandCard from './BrandCard';
+import AppIcon from './AppIcon';
+import { API_BASE } from '../config/api';
 import { X, Bookmark, Heart, RotateCcw, ArrowLeft, ArrowRight, Loader2, CreditCard } from 'lucide-react';
-
-const API_BASE = 'http://127.0.0.1:8000';
 
 const SECTEUR_MAP = { Tous: 'GENERAL', Tech: 'TECH', Food: 'FOOD', Luxe: 'LUXE' };
 
@@ -15,6 +15,28 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
   const [animation, setAnimation] = useState('');
   const [fetchError, setFetchError] = useState('');
   const [modelUsed, setModelUsed] = useState('');
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const cardRef = useRef(null);
+
+  const SWIPE_THRESHOLD = 80;
+
+  const sendFeedback = useCallback(async (generationId, voteType) => {
+    if (!generationId) return;
+    try {
+      await fetch(`${API_BASE}/feedback/${voteType}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ generation_id: generationId }),
+      });
+    } catch (e) {
+      console.error('Erreur feedback:', e);
+    }
+  }, [token]);
 
   const isModeB = config.mode === 'B';
   const typeNom = generationType === 'enterprise' ? 'societe' : 'marque';
@@ -110,28 +132,78 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
   const currentCard = names[currentIndex];
   const remainingCount = names.length - currentIndex;
 
-  // 2. LOGIQUE DU SWIPE ANIMÉ
-  const handleAction = (type) => {
+  // Logique like / dislike / favori (boutons + swipe)
+  const handleAction = useCallback((type) => {
     if (currentIndex >= names.length) return;
 
-    if (type === 'like' || type === 'save') {
-      const cardWithStyle = {
-        ...currentCard,
-        style: currentCard?.style || config.style,
-        secteur: currentCard?.secteur || config.style
-      };
+    const card = names[currentIndex];
+    const cardWithStyle = {
+      ...card,
+      style: card?.style || config.style,
+      secteur: card?.secteur || secteur,
+      langue: card?.langue || lang,
+      generation_id: card?.generation_id,
+    };
+
+    if (type === 'like') {
+      sendFeedback(card?.generation_id, 'like');
       addFavorite(cardWithStyle);
     }
+    if (type === 'save') {
+      addFavorite(cardWithStyle);
+    }
+    if (type === 'dislike') {
+      sendFeedback(card?.generation_id, 'dislike');
+    }
 
-    if (type === 'pass') setAnimation('animate-swipe-left');
+    if (type === 'pass' || type === 'dislike') setAnimation('animate-swipe-left');
     if (type === 'like') setAnimation('animate-swipe-right');
     if (type === 'save') setAnimation('animate-bounce-up');
+
+    setDragX(0);
+    setIsDragging(false);
 
     setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
       setAnimation('');
     }, 450);
+  }, [currentIndex, names, config.style, secteur, lang, addFavorite, sendFeedback]);
+
+  const onPointerDown = (e) => {
+    if (currentIndex >= names.length || animation) return;
+    dragStartX.current = e.clientX;
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
+
+  const onPointerMove = (e) => {
+    if (!isDragging || animation) return;
+    setDragX(e.clientX - dragStartX.current);
+  };
+
+  const onPointerUp = (e) => {
+    if (!isDragging) return;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    setIsDragging(false);
+
+    const delta = e.clientX - dragStartX.current;
+    if (delta > SWIPE_THRESHOLD) {
+      handleAction('like');
+    } else if (delta < -SWIPE_THRESHOLD) {
+      handleAction('dislike');
+    } else {
+      setDragX(0);
+    }
+  };
+
+  const onPointerCancel = () => {
+    setIsDragging(false);
+    setDragX(0);
+  };
+
+  const cardTransform = isDragging && !animation
+    ? `translateX(${dragX}px) rotate(${dragX * 0.06}deg)`
+    : undefined;
 
   if (loading) {
     return (
@@ -155,7 +227,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
         <div className="p-8 bg-[#12141c] rounded-3xl border border-gray-900 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 animate-fade-in">
-          <span className="text-4xl">⚠️</span>
+          <AppIcon name="warning" size={48} alt="" className="mb-1" />
           <h3 className="text-xl font-bold tracking-wide">
             {lang === 'ar' ? 'خطأ في التوليد' : 'Erreur de génération'}
           </h3>
@@ -176,7 +248,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] flex flex-col items-center justify-center p-6 text-center text-white">
         <div className="p-8 bg-[#12141c] rounded-3xl border border-gray-900 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 animate-fade-in">
-          <span className="text-4xl">🤔</span>
+          <AppIcon name="thinking" size={48} alt="" className="mb-1" />
           <h3 className="text-xl font-bold tracking-wide">
             {lang === 'ar' ? 'وصف غير مفهوم' : 'Concept non reconnu'}
           </h3>
@@ -197,7 +269,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] px-6 py-4 flex flex-col justify-between max-w-lg mx-auto animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] px-4 sm:px-6 py-4 flex flex-col justify-between max-w-xl mx-auto animate-fade-in">
       
       {/* TOP BARRE : COMPTEUR & MODÈLE LLM */}
       <div className="w-full flex justify-between items-center text-gray-500 font-semibold text-xs">
@@ -220,22 +292,43 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
         </div>
       </div>
 
-      {/* COMPOSANT DE VUE DE CARTE */}
+      {/* CARTE SWIPABLE */}
       <div className="flex-1 flex flex-col items-center justify-center my-4 relative w-full gap-4">
         {currentIndex < names.length ? (
           <>
-            <BrandCard
-              data={currentCard}
-              animationClass={animation}
-              index={currentIndex}
-              config={config}
-              isLlm={isModeB}
-            />
-            
-            {/* ⚡ NOUVEAU BOUTON : RÉSERVATION EXPRESS DIRECTEMENT SOUS LA CARTE */}
+            <div
+              ref={cardRef}
+              className="relative w-full max-w-md touch-pan-y select-none cursor-grab active:cursor-grabbing"
+              style={{ transform: cardTransform, transition: isDragging ? 'none' : 'transform 0.3s ease' }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+            >
+              {/* Indicateurs swipe */}
+              {dragX > 40 && (
+                <div className="absolute top-8 left-8 z-20 px-4 py-2 border-4 border-emerald-400 text-emerald-400 font-black text-lg rounded-xl rotate-[-12deg] bg-emerald-950/40 pointer-events-none">
+                  LIKE
+                </div>
+              )}
+              {dragX < -40 && (
+                <div className="absolute top-8 right-8 z-20 px-4 py-2 border-4 border-red-400 text-red-400 font-black text-lg rounded-xl rotate-[12deg] bg-red-950/40 pointer-events-none">
+                  NOPE
+                </div>
+              )}
+
+              <BrandCard
+                data={currentCard}
+                animationClass={animation}
+                index={currentIndex}
+                config={config}
+                isLlm={isModeB}
+              />
+            </div>
+
             <button
               onClick={() => onReserveClick(currentCard.nom)}
-              className="w-full max-w-sm py-3 bg-[#12141c] hover:bg-purple-950/20 border border-purple-900/40 text-purple-400 hover:text-purple-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+              className="w-full max-w-md py-3 bg-[#12141c] hover:bg-purple-950/20 border border-purple-900/40 text-purple-400 hover:text-purple-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
             >
               <CreditCard size={14} />
               <span>{lang === 'ar' ? 'حجز هذا الاسم (خيار مجاني متاح)' : 'Réserver ce nom (Option gratuite disponible)'}</span>
@@ -243,7 +336,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
           </>
         ) : (
           <div className="text-center p-8 bg-[#12141c] rounded-3xl border border-gray-950 w-full max-w-sm aspect-[3/4] flex flex-col justify-center items-center gap-2">
-            <span className="text-3xl">🎉</span>
+            <AppIcon name="party" size={40} alt="" />
             <h3 className="text-white font-bold mt-2">Fin de la sélection</h3>
             <p className="text-gray-500 text-xs max-w-[200px] mx-auto">Modifiez votre prompt pour explorer d'autres déclinaisons.</p>
           </div>
@@ -262,8 +355,9 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
       <div className="w-full flex justify-center items-center gap-5 pb-6">
         <button
           disabled={currentIndex >= names.length}
-          onClick={() => handleAction('pass')}
+          onClick={() => handleAction('dislike')}
           className="w-14 h-14 bg-[#12141c] text-red-500 border border-gray-950 hover:border-red-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
+          title={lang === 'ar' ? 'رفض' : 'Dislike'}
         >
           <X size={22} />
         </button>

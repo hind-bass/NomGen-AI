@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Globe, Eye, EyeOff, Lock, Mail, ArrowLeft, ArrowRight } from 'lucide-react';
+import AppIcon from './AppIcon';
+import { API_BASE } from '../config/api';
+import logoImage from '../assets/image.png';
 
 export default function AuthScreen({ onAuthSuccess }) {
   const { lang, setLang } = useApp();
@@ -14,6 +17,7 @@ export default function AuthScreen({ onAuthSuccess }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Gestion de la flèche de retour selon le sens de lecture (LTR / RTL)
   const BackIcon = lang === 'ar' ? ArrowRight : ArrowLeft;
@@ -33,6 +37,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       switchtoLogin: "Déjà membre ? Connectez-vous",
       errFields: "Veuillez remplir tous les champs.",
       errMatch: "Les mots de passe ne correspondent pas.",
+      errPassword: "Le mot de passe doit contenir au moins 6 caractères.",
+      errServer: "Impossible de joindre le serveur.",
+      errAuth: "Email ou mot de passe incorrect.",
     },
     ar: {
       loginTitle: "تسجيل الدخول",
@@ -47,6 +54,9 @@ export default function AuthScreen({ onAuthSuccess }) {
       switchtoLogin: "عضو بالفعل؟ سجل دخولك",
       errFields: "يرجى ملء جميع الحقول.",
       errMatch: "كلمات المرور غير متطابقة.",
+      errPassword: "يجب أن تحتوي كلمة المرور على 6 أحرف على الأقل.",
+      errServer: "تعذر الاتصال بالخادم.",
+      errAuth: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
     }
   };
 
@@ -72,8 +82,57 @@ export default function AuthScreen({ onAuthSuccess }) {
       return;
     }
 
-    // Authentification simulée réussie
-    onAuthSuccess({ email });
+    if (isRegister && password.length < 6) {
+      setError(at('errPassword'));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Inscription si mode register
+      if (isRegister) {
+        const registerResp = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!registerResp.ok) {
+          const data = await registerResp.json().catch(() => ({}));
+          setError(
+            typeof data.detail === 'string'
+              ? data.detail
+              : (lang === 'ar' ? 'فشل إنشاء الحساب.' : 'Échec de la création du compte.')
+          );
+          return;
+        }
+      }
+
+      // Connexion via l'API backend (vérifie email + mot de passe)
+      const loginResp = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginResp.ok) {
+        const data = await loginResp.json().catch(() => ({}));
+        setError(
+          typeof data.detail === 'string' ? data.detail : at('errAuth')
+        );
+        return;
+      }
+
+      const data = await loginResp.json();
+      onAuthSuccess(
+        { email: data.email, role: data.role, id: data.user_id },
+        data.access_token
+      );
+    } catch {
+      setError(at('errServer'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,13 +173,9 @@ export default function AuthScreen({ onAuthSuccess }) {
           <div className="flex flex-col items-center gap-3 text-center mb-8">
             <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg shadow-purple-950/50 border border-purple-500/20 bg-black/20">
               <img 
-                src="/assets/image.png" 
+                src={logoImage} 
                 alt="BrandForge BF Logo" 
                 className="w-full h-full object-cover select-none"
-                onError={(e) => {
-                  // Fallback d'urgence si le chemin d'asset absolu diffère
-                  e.target.src = "src/assets/image.png";
-                }}
               />
             </div>
             <h1 className="text-2xl font-bold tracking-wider">BrandForge</h1>
@@ -129,8 +184,9 @@ export default function AuthScreen({ onAuthSuccess }) {
 
           {/* MESSAGE D'ERREUR */}
           {error && (
-            <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium mb-5 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              ⚠️ {error}
+            <div className={`p-3 bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl text-xs font-medium mb-5 flex items-start gap-2 ${lang === 'ar' ? 'text-right flex-row-reverse' : 'text-left'}`}>
+              <AppIcon name="warning" size={16} alt="" className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -219,9 +275,10 @@ export default function AuthScreen({ onAuthSuccess }) {
             {/* BOUTON SOUMISSION PRINCIPAL */}
             <button
               type="submit"
-              className="w-full py-3 mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs tracking-wide transition-all shadow-lg shadow-purple-950/30 active:scale-[0.98]"
+              disabled={loading}
+              className="w-full py-3 mt-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs tracking-wide transition-all shadow-lg shadow-purple-950/30 active:scale-[0.98]"
             >
-              {isRegister ? at('btnSubmitRegister') : at('btnSubmitLogin')}
+              {loading ? '...' : (isRegister ? at('btnSubmitRegister') : at('btnSubmitLogin'))}
             </button>
           </form>
 

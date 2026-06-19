@@ -27,9 +27,24 @@ DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
 
 class SuggestionCreate(BaseModel):
     nom: str
-    categorie: str = "general"
+    categorie: str = "general"       # secteur : tech, food, luxe, general
     langue: str = "fr"
-    type_nom: str = "marque"          # "marque" | "societe"
+    type_nom: str = "marque"           # marque | societe (entreprise accepté)
+
+    @classmethod
+    def normalize_secteur(cls, value: str) -> str:
+        mapping = {
+            "tech": "tech", "food": "food", "luxe": "luxe", "general": "general",
+            "tous": "general", "minimal": "general", "futuriste": "tech",
+        }
+        return mapping.get(value.lower().strip(), value.lower().strip())
+
+    @classmethod
+    def normalize_type(cls, value: str) -> str:
+        v = value.lower().strip()
+        if v in ("entreprise", "societe", "company"):
+            return "societe"
+        return "marque"
 
 
 class SuggestionRead(BaseModel):
@@ -61,6 +76,17 @@ def _nom_existe_dans_fichier(path: Path, nom: str) -> bool:
     return nom.lower().strip() in noms_existants
 
 
+def _nom_existe_dans_dataset(langue: str, type_nom: str, nom: str) -> bool:
+    """Vérifie si le nom existe déjà dans un fichier du dossier data/{lang}/{type}/."""
+    type_dir = DATA_DIR / langue.lower().strip() / type_nom.lower().strip()
+    if not type_dir.is_dir():
+        return False
+    for path in type_dir.glob("*.txt"):
+        if _nom_existe_dans_fichier(path, nom):
+            return True
+    return False
+
+
 def _ajouter_au_dataset(path: Path, nom: str):
     """Ajoute le nom approuvé au bon fichier .txt (crée les dossiers si nécessaire)."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -80,41 +106,61 @@ def submit_suggestion(
     Soumettre un nouveau nom pour modération.
     Retourne 409 si le nom existe déjà dans le dataset ou est en attente.
     """
-    nom_clean = req.nom.strip()
+    nom_clean = req.nom.strip().lower()
     if len(nom_clean) < 2:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Le nom doit contenir au moins 2 caractères."
         )
 
-    # Vérifier si déjà dans le dataset .txt
-    dataset_file = _dataset_path(req.langue, req.categorie, req.type_nom)
-    if _nom_existe_dans_fichier(dataset_file, nom_clean):
+    secteur = SuggestionCreate.normalize_secteur(req.categorie)
+    type_nom = SuggestionCreate.normalize_type(req.type_nom)
+    langue = req.langue.lower().strip()[:2]
+    if langue not in ("fr", "ar"):
+        langue = "fr"
+
+    # Vérifier si déjà dans le dossier data/
+    if _nom_existe_dans_dataset(langue, type_nom, nom_clean):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"'{nom_clean}' est déjà présent dans le dataset {req.langue}/{req.type_nom}/{req.categorie}."
+            detail=f"'{nom_clean}' existe déjà dans la base de données ({langue}/{type_nom})."
+        )
+
+    # Vérifier si déjà approuvé en base
+    already_approved = session.exec(
+        select(Suggestion).where(
+            Suggestion.nom == nom_clean,
+            Suggestion.langue == langue,
+            Suggestion.secteur == secteur,
+            Suggestion.status == "approved",
+        )
+    ).first()
+    if already_approved:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"'{nom_clean}' est déjà validé et présent dans la base."
         )
 
     # Vérifier si déjà soumis et en attente
     existing = session.exec(
         select(Suggestion).where(
             Suggestion.nom == nom_clean,
-            Suggestion.langue == req.langue,
+            Suggestion.langue == langue,
             Suggestion.status == "pending",
         )
     ).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"'{nom_clean}' est déjà en attente de modération."
+            detail=f"'{nom_clean}' est déjà en attente de validation par l'administrateur."
         )
 
     suggestion = Suggestion(
         user_id=current_user.id,
         nom=nom_clean,
-        langue=req.langue,
-        secteur=req.categorie,
-        type_nom=req.type_nom,
+        langue=langue,
+        secteur=secteur,
+        type_nom=type_nom,
         status="pending",
     )
     session.add(suggestion)
@@ -182,8 +228,18 @@ def approve_suggestion(
             detail=f"Cette suggestion a déjà été traitée (statut : {suggestion.status})."
         )
 
-    # Ajouter au dataset
     dataset_file = _dataset_path(suggestion.langue, suggestion.secteur, suggestion.type_nom)
+    if _nom_existe_dans_dataset(suggestion.langue, suggestion.type_nom, suggestion.nom):
+        suggestion.status = "rejected"
+        suggestion.reviewed_at = datetime.utcnow()
+        session.add(suggestion)
+        session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"'{suggestion.nom}' existe déjà dans data/{suggestion.langue}/{suggestion.type_nom}/ — suggestion rejetée."
+        )
+
+    # Ajouter au dataset
     _ajouter_au_dataset(dataset_file, suggestion.nom)
 
     # Mettre à jour le statut
