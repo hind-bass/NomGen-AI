@@ -14,8 +14,7 @@ from app.models.db_models import History, User
 router = APIRouter(prefix="/api/history", tags=["Historique"])
 
 
-# ─── Schémas ─────────────────────────────────────────────────────────────────
-
+# Schémas 
 class HistoryRead(BaseModel):
     id: int
     prompt: str
@@ -26,8 +25,7 @@ class HistoryRead(BaseModel):
     created_at: str
 
 
-# ─── Endpoints ───────────────────────────────────────────────────────────────
-
+#  Endpoints 
 @router.get("/", response_model=list[HistoryRead])
 def get_history(
     limit: int = Query(default=20, le=100),
@@ -61,8 +59,7 @@ def get_history(
     ]
 
 
-# ─── Fonction utilitaire interne ──────────────────────────────────────────────
-
+#  Fonction utilitaire interne 
 def log_generation(
     session: Session,
     user_id: int,

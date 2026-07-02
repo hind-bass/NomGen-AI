@@ -15,7 +15,7 @@ from app.models.db_models import Favorite, User
 router = APIRouter(prefix="/api/favorites", tags=["Favoris"])
 
 
-# ─── Schémas ─────────────────────────────────────────────────────────────────
+# Schémas 
 
 class FavoriteCreate(BaseModel):
     nom: str
@@ -32,7 +32,7 @@ class FavoriteRead(BaseModel):
     secteur: str
 
 
-# ─── Endpoints ───────────────────────────────────────────────────────────────
+#  Endpoints
 
 @router.get("/", response_model=list[FavoriteRead])
 def get_favorites(

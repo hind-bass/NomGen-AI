@@ -214,11 +214,7 @@ def approve_suggestion(
     admin: User = Depends(get_current_admin),
     session: Session = Depends(get_session),
 ):
-    """
-    Approuve une suggestion (admin uniquement).
-    → Ajoute le nom dans le bon fichier .txt du dataset.
-    → Passe le statut à "approved" en DB.
-    """
+   
     suggestion = session.get(Suggestion, suggestion_id)
     if not suggestion:
         raise HTTPException(status_code=404, detail="Suggestion introuvable.")

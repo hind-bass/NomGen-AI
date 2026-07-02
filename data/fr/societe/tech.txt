@@ -252,3 +252,6 @@ prosmart
 protexia
 transportalianeuralink
 neuralink
+paylink
+africashift
+youngpay

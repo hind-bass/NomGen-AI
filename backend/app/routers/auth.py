@@ -18,10 +18,10 @@ from app.services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 
-# ─── Schémas Pydantic (corps des requêtes/réponses) ──────────────────────────
+# Schémas Pydantic (corps des requêtes/réponses) 
 
 class RegisterRequest(BaseModel):
-    email: str          # EmailStr nécessite email-validator, str suffit ici
+    email: str          
     password: str
 
 
@@ -37,7 +37,7 @@ class TokenResponse(BaseModel):
     email: str
 
 
-# ─── Endpoints ───────────────────────────────────────────────────────────────
+#  Endpoints 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(req: RegisterRequest, session: Session = Depends(get_session)):

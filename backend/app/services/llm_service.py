@@ -290,11 +290,17 @@ class OllamaProvider(BaseLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt},
             ],
-            "options": {"temperature": temperature},
+            "options": {
+                "temperature": temperature,
+                # Limite la sortie pour accélérer (n noms JSON ≈ 150–350 tokens)
+                "num_predict": min(512, max(180, n * 28)),
+            },
+            "keep_alive": "30m",
             "stream": False,
         }
 
-        async with httpx.AsyncClient(timeout=120) as client:
+        timeout = _ollama_request_timeout(self.model_id)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             try:
                 resp = await client.post(
                     f"{self.base_url}/api/chat",
@@ -550,6 +556,14 @@ def _ollama_base_url() -> str:
     return os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
+def _ollama_request_timeout(model_id: str) -> float:
+    """Timeout HTTP Ollama — modèles fine-tunés (6+ Go) plus lents, surtout au 1er chargement."""
+    default = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "300"))
+    if "nomgen" in model_id.lower():
+        return float(os.getenv("OLLAMA_FINETUNED_TIMEOUT_SECONDS", "600"))
+    return default
+
+
 def check_ollama_running() -> tuple[bool, str]:
     """Vérifie si Ollama répond et retourne un message d'état."""
     try:
@@ -660,6 +674,15 @@ AVAILABLE_MODELS = {
         "description": "Alias vers llama3.1",
         "env_required": [],
         "model_id": "llama3.1",
+        "specialized": True,
+    },
+    "ollama-nomgen-qwen25": {
+        "provider": "ollama",
+        "nom_affiche": "NomGen Qwen 2.5 (fine-tuné)",
+        "langues": ["fr", "ar"],
+        "description": "Qwen 2.5 fine-tuné sur vos données NomGen (ollama create nomgen-qwen25)",
+        "env_required": [],
+        "model_id": "nomgen-qwen25",
         "specialized": True,
     },
     "ollama-qwen25": {

@@ -10,6 +10,9 @@ venv/
 node_modules/
 frontend/dist/
 
+# Fine-tuning tools (use Colab notebook instead)
+LLaMA-Factory/
+
 # Runtime / local
 backend/nomgen.db
 backend/server.log

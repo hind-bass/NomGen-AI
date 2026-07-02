@@ -25,6 +25,7 @@ export default function AdminDashboard({ onGoBack }) {
   const [message, setMessage] = useState('');
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [finetuningGuideOpen, setFinetuningGuideOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ email: '', password: '', role: 'user', is_active: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -204,16 +205,21 @@ export default function AdminDashboard({ onGoBack }) {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm(t('Supprimer cet utilisateur ?', 'حذف هذا المستخدم؟'))) return;
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (response.ok) {
-        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
         showMessage(t('Utilisateur supprimé.', 'تم حذف المستخدم.'));
+        setUserToDelete(null);
       } else {
         const data = await response.json().catch(() => ({}));
         showMessage(data.detail || t('Erreur lors de la suppression.', 'خطأ أثناء الحذف.'));
@@ -594,7 +600,7 @@ export default function AdminDashboard({ onGoBack }) {
                                 {u.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                               </button>
                               <button
-                                onClick={() => handleDeleteUser(u.id)}
+                                onClick={() => handleDeleteUser(u)}
                                 disabled={isSelf}
                                 className="w-8 h-8 rounded-lg bg-red-950/40 text-red-400 border border-red-900/30 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
                                 title={t('Supprimer', 'حذف')}
@@ -996,6 +1002,54 @@ export default function AdminDashboard({ onGoBack }) {
                 'ملاحظة: الوضع B يُثرِي المطالبات تلقائياً. المزامنة والتصدير يثبتان هذا التحسين.'
               )}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE CONFIRMATION SUPPRESSION UTILISATEUR */}
+      {userToDelete && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4 animate-fade-in"
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
+          onClick={() => setUserToDelete(null)}
+        >
+          <div
+            className="bg-[#12141c] border border-gray-900 rounded-3xl p-6 max-w-sm w-full text-white shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-red-950/40 border border-red-900/40 flex items-center justify-center">
+                <Trash2 size={24} className="text-red-400" />
+              </div>
+              <h3 className="text-base font-bold text-white">
+                {t('Confirmer la suppression', 'تأكيد الحذف')}
+              </h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {lang === 'ar' ? (
+                  <>هل تريد حذف المستخدم <span className="text-white font-bold">{userToDelete.email}</span>؟ لا يمكن التراجع عن هذا الإجراء.</>
+                ) : (
+                  <>Voulez-vous supprimer l&apos;utilisateur <span className="text-white font-bold">{userToDelete.email}</span> ? Cette action est définitive.</>
+                )}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="flex-1 py-2.5 bg-[#1f2833] hover:bg-gray-800 border border-gray-800 text-gray-300 font-bold rounded-xl text-xs transition-all active:scale-95"
+              >
+                {t('Annuler', 'إلغاء')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteUser}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-red-950/30"
+              >
+                <Trash2 size={13} />
+                {t('Supprimer', 'حذف')}
+              </button>
+            </div>
           </div>
         </div>
       )}

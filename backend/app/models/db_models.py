@@ -64,7 +64,7 @@ class Reservation(SQLModel, table=True):
     expires_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_paid: bool = Field(default=False)
-    # Informations client & paiement (demande envoyée à l'admin)
+    # Informations client et paiement (demande envoyée à l'admin)
     forfait: str = Field(default="free")              # free | pro | max
     client_nom: Optional[str] = None
     client_prenom: Optional[str] = None

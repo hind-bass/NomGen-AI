@@ -1,5 +1,5 @@
 """
-Architecture nanoGPT — partagée entre les notebooks et le backend.
+Architecture nanoGPT partagée entre les notebooks et le backend.
 Inspirée de Karpathy 'Let's build GPT' (2022).
 Optimisée pour la génération conditionnelle de noms de marques.
 """
@@ -68,7 +68,6 @@ class TransformerBlock(nn.Module):
 class NanoGPT(nn.Module):
     """
     Modèle GPT miniature pour la génération de noms de marques.
-    Utilisé dans TOUS les sprints et dans le backend FastAPI.
     """
     def __init__(self, vocab_size, n_embed=64, n_head=4,
                  n_layer=4, block_size=24, dropout=0.1):

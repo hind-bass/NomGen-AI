@@ -64,7 +64,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
               langue: lang,
               secteur,
               type_nom: typeNom,
-              n: 15,
+              n: config.model?.includes('nomgen') ? 8 : 10,
               temperature: 0.8,
             }),
           });
@@ -217,6 +217,13 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
         {isModeB && config.modelLabel && (
           <p className="text-[10px] text-purple-400/70 bg-purple-950/30 px-3 py-1 rounded-full border border-purple-900/30">
             {config.modelLabel}
+          </p>
+        )}
+        {isModeB && config.model?.includes('nomgen') && (
+          <p className="text-[10px] text-gray-500 max-w-xs text-center px-4">
+            {lang === 'ar'
+              ? 'النموذج المخصص قد يستغرق 2–5 دقائق في المرة الأولى. لا تغلق الصفحة.'
+              : 'Modèle fine-tuné : 2–5 min la 1ère fois (chargement Ollama). Ne fermez pas la page.'}
           </p>
         )}
       </div>
