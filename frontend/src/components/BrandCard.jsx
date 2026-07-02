@@ -28,17 +28,17 @@ export default function BrandCard({ data, animationClass, index, config, isLlm =
   // Taille de police adaptée à la longueur du nom
   const nameLen = (data.nom || '').length;
   const nameSizeClass =
-    nameLen > 16 ? 'text-xl sm:text-2xl' :
-    nameLen > 12 ? 'text-2xl sm:text-3xl' :
-    nameLen > 8  ? 'text-3xl sm:text-4xl' :
-    'text-4xl sm:text-5xl';
+    nameLen > 16 ? 'text-lg sm:text-xl' :
+    nameLen > 12 ? 'text-xl sm:text-2xl' :
+    nameLen > 8  ? 'text-2xl sm:text-3xl' :
+    'text-3xl sm:text-4xl';
 
   return (
-    <div className={`w-full max-w-md aspect-[3/4] rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-br ${currentGradient} border ${animationClass}`}>
+    <div className={`w-full max-w-md h-[240px] sm:h-[280px] rounded-3xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl transition-all duration-500 bg-gradient-to-br ${currentGradient} border ${animationClass}`}>
       
       {/* EFFET GRAPHIQUE EN ARRIÈRE-PLAN */}
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] z-0" />
-      <div className="absolute -bottom-10 -right-10 text-9xl font-black text-white/5 uppercase select-none z-0 tracking-tighter">
+      <div className="absolute -bottom-8 -right-8 text-7xl font-black text-white/5 uppercase select-none z-0 tracking-tighter">
         {translatedStyle}
       </div>
 
@@ -70,8 +70,8 @@ export default function BrandCard({ data, animationClass, index, config, isLlm =
       </div>
 
       {/* ÉTOILE DE RECOMMANDATION */}
-      <div className="absolute top-6 right-6 z-10 text-white/60">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <div className="absolute top-4 right-4 z-10 text-white/60">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
     </div>
   );

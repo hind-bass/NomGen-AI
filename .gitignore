@@ -15,6 +15,7 @@ LLaMA-Factory/
 
 # Runtime / local
 backend/nomgen.db
+backend/nomgen.db.*
 backend/server.log
 *.log
 

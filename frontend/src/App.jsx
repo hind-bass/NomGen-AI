@@ -5,6 +5,7 @@ import PromptScreen from './components/PromptScreen';
 import CardsScreen from './components/CardsScreen';
 import AuthScreen from './components/AuthScreen';
 import AdminDashboard from './components/AdminDashboard'; 
+import HistoryPanel from './components/HistoryPanel';
 import { useApp } from './context/AppContext'; 
 import { Trash2, CreditCard, Send, CheckCircle } from 'lucide-react';
 import { validateBillingForm, formatCardNumber, formatExpiry } from './utils/paymentValidation';
@@ -25,6 +26,7 @@ export default function App() {
   const [screen, setScreen] = useState('home'); // 'home', 'prompt', 'cards', 'admin'
   const [generationType, setGenerationType] = useState(null);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [config, setConfig] = useState({ prompt: '', style: 'Tous' });
 
   // ⚡ ÉTATS MODALE SUGGESTION (NAVBAR) - Enrichi avec type et secteur demandés
@@ -64,6 +66,22 @@ export default function App() {
   const handleGenerate = (data) => {
     setConfig(data);
     setScreen('cards'); 
+  };
+
+  const SECTEUR_TO_STYLE = { GENERAL: 'Tous', TECH: 'Tech', FOOD: 'Food', LUXE: 'Luxe' };
+
+  const handleRelaunchFromHistory = (item) => {
+    setHistoryOpen(false);
+    setGenerationType('brand');
+    const nextConfig = {
+      prompt: item.prompt,
+      style: SECTEUR_TO_STYLE[item.secteur] || item.secteur || 'Tous',
+      mode: item.mode === 'B' ? 'B' : 'A',
+      model: config.model,
+      modelLabel: config.modelLabel,
+    };
+    setConfig(nextConfig);
+    setScreen(item.mode === 'B' ? 'prompt' : 'cards');
   };
 
   // ⚡ OUVERTURE DU WORKFLOW DE RÉSERVATION
@@ -255,7 +273,8 @@ export default function App() {
     <div className="min-h-screen bg-[#0b0c10] font-sans antialiased flex flex-col">
       
       <Navbar 
-        onOpenFavorites={() => setFavoritesOpen(true)} 
+        onOpenFavorites={() => { setHistoryOpen(false); setFavoritesOpen(true); }} 
+        onOpenHistory={() => { setFavoritesOpen(false); setHistoryOpen(true); }}
         onOpenSuggestion={() => setNavbarSuggestionOpen(true)} 
       />
 
@@ -278,7 +297,12 @@ export default function App() {
         {screen === 'home' && <MainSelection onSelectMode={handleSelectMode} />}
         {screen === 'prompt' && (
           <div className="animate-fade-in">
-            <PromptScreen generationType={generationType} onGoBack={() => setScreen('home')} onGenerate={handleGenerate} />
+            <PromptScreen
+              generationType={generationType}
+              onGoBack={() => setScreen('home')}
+              onGenerate={handleGenerate}
+              initialConfig={config.prompt ? config : null}
+            />
           </div>
         )}
         {screen === 'cards' && (
@@ -347,6 +371,15 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <HistoryPanel
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        token={token}
+        lang={lang}
+        t={t}
+        onRelaunch={handleRelaunchFromHistory}
+      />
 
       {/* MODALE CONFIRMATION SUPPRESSION FAVORI */}
       {favoriteToDelete && (

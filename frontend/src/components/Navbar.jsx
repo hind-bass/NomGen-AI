@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Heart, User, LogOut, PlusCircle } from 'lucide-react';
+import { Globe, Heart, User, LogOut, PlusCircle, Clock } from 'lucide-react';
 import logoImage from '../assets/image.png';
 
-export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
+export default function Navbar({ onOpenFavorites, onOpenHistory, onOpenSuggestion }) {
   const { lang, setLang, favorites, user, logoutUser } = useApp();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -78,7 +78,16 @@ export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
           )}
         </div>
 
-        {/* 3. BOUTON FAVORIS AVEC COMPTEUR DE BADGE DISCRET */}
+        {/* 3. HISTORIQUE DES GÉNÉRATIONS */}
+        <button
+          onClick={onOpenHistory}
+          className="p-2 bg-[#12141c] border border-gray-950 rounded-full text-white hover:text-blue-400 hover:border-blue-500/20 transition-all"
+          title={lang === 'ar' ? 'السجل' : 'Historique'}
+        >
+          <Clock size={15} />
+        </button>
+
+        {/* 4. BOUTON FAVORIS AVEC COMPTEUR DE BADGE DISCRET */}
         <button 
           onClick={onOpenFavorites}
           className="relative p-2 bg-[#12141c] border border-gray-950 rounded-full text-white hover:text-emerald-400 hover:border-emerald-500/20 transition-all"
@@ -91,7 +100,7 @@ export default function Navbar({ onOpenFavorites, onOpenSuggestion }) {
           )}
         </button>
 
-        {/* 4. BOUTON AVATAR DE PROFIL USER ET TIROIR DÉROULANT */}
+        {/* 5. BOUTON AVATAR DE PROFIL USER ET TIROIR DÉROULANT */}
         <div className="relative">
           <button 
             onClick={() => {

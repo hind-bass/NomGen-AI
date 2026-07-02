@@ -276,7 +276,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] px-4 sm:px-6 py-4 flex flex-col justify-between max-w-xl mx-auto animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#0b0c10] px-4 sm:px-6 py-2 flex flex-col justify-between max-w-xl mx-auto animate-fade-in">
       
       {/* TOP BARRE : COMPTEUR & MODÈLE LLM */}
       <div className="w-full flex justify-between items-center text-gray-500 font-semibold text-xs">
@@ -300,7 +300,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
       </div>
 
       {/* CARTE SWIPABLE */}
-      <div className="flex-1 flex flex-col items-center justify-center my-4 relative w-full gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center my-2 relative w-full gap-3">
         {currentIndex < names.length ? (
           <>
             <div
@@ -342,7 +342,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
             </button>
           </>
         ) : (
-          <div className="text-center p-8 bg-[#12141c] rounded-3xl border border-gray-950 w-full max-w-sm aspect-[3/4] flex flex-col justify-center items-center gap-2">
+          <div className="text-center p-6 bg-[#12141c] rounded-3xl border border-gray-950 w-full max-w-sm h-[220px] flex flex-col justify-center items-center gap-2">
             <AppIcon name="party" size={40} alt="" />
             <h3 className="text-white font-bold mt-2">Fin de la sélection</h3>
             <p className="text-gray-500 text-xs max-w-[200px] mx-auto">Modifiez votre prompt pour explorer d'autres déclinaisons.</p>
@@ -359,11 +359,11 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
       )}
 
       {/* BARRE D'ACTIONS INFÉRIEURE */}
-      <div className="w-full flex justify-center items-center gap-5 pb-6">
+      <div className="w-full flex justify-center items-center gap-4 pb-3">
         <button
           disabled={currentIndex >= names.length}
           onClick={() => handleAction('dislike')}
-          className="w-14 h-14 bg-[#12141c] text-red-500 border border-gray-950 hover:border-red-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
+          className="w-12 h-12 bg-[#12141c] text-red-500 border border-gray-950 hover:border-red-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
           title={lang === 'ar' ? 'رفض' : 'Dislike'}
         >
           <X size={22} />
@@ -372,7 +372,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
         <button
           disabled={currentIndex >= names.length}
           onClick={() => handleAction('save')}
-          className="w-12 h-12 bg-[#12141c] text-purple-400 border border-gray-950 hover:border-purple-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
+          className="w-11 h-11 bg-[#12141c] text-purple-400 border border-gray-950 hover:border-purple-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
         >
           <Bookmark size={18} />
         </button>
@@ -380,7 +380,7 @@ export default function CardsScreen({ config, generationType, onGoBack, onReserv
         <button
           disabled={currentIndex >= names.length}
           onClick={() => handleAction('like')}
-          className="w-14 h-14 bg-[#12141c] text-emerald-400 border border-gray-950 hover:border-emerald-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
+          className="w-12 h-12 bg-[#12141c] text-emerald-400 border border-gray-950 hover:border-emerald-900/50 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-20"
         >
           <Heart size={22} />
         </button>

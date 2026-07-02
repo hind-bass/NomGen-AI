@@ -4,16 +4,16 @@ import { ArrowLeft, ArrowRight, Sparkles, Cpu, Layers, Loader2 } from 'lucide-re
 import AppIcon from './AppIcon';
 import { API_BASE } from '../config/api';
 
-export default function PromptScreen({ generationType, onGoBack, onGenerate }) {
+export default function PromptScreen({ generationType, onGoBack, onGenerate, initialConfig }) {
   const { lang, t } = useApp();
-  const [prompt, setPrompt] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState('Tous');
-  const [isModeB, setIsModeB] = useState(false);
+  const [prompt, setPrompt] = useState(initialConfig?.prompt || '');
+  const [selectedStyle, setSelectedStyle] = useState(initialConfig?.style || 'Tous');
+  const [isModeB, setIsModeB] = useState(initialConfig?.mode === 'B');
   const [error, setError] = useState('');
 
   const [llmModels, setLlmModels] = useState([]);
   const [modelsLoading, setModelsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedModel, setSelectedModel] = useState(initialConfig?.model || '');
 
   const BackIcon = lang === 'ar' ? ArrowRight : ArrowLeft;
   const stylesList = ['Tous', 'Tech', 'Food', 'Luxe'];

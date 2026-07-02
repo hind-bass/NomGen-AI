@@ -399,10 +399,13 @@ class FanarProvider(BaseLLMProvider):
     API : https://fanar.qa (en accès restreint / bêta publique)
     """
 
-    def __init__(self, model_id: str = "fanar-v1", langue: str = "ar"):
+    def __init__(self, model_id: str = "Fanar", langue: str = "ar"):
         super().__init__(model_id, langue)
         self.api_key  = os.getenv("FANAR_API_KEY", "")
-        self.base_url = os.getenv("FANAR_BASE_URL", "https://api.fanar.qa/v1")
+        self.base_url = os.getenv("FANAR_BASE_URL", "https://api.fanar.qa/v1").rstrip("/")
+        env_model = os.getenv("FANAR_MODEL_ID", "").strip()
+        if env_model:
+            self.model_id = env_model
 
     async def generate(self, prompt, n, type_nom, secteur, style, temperature):
         if not self.api_key:
@@ -430,7 +433,16 @@ class FanarProvider(BaseLLMProvider):
                 },
                 json=payload,
             )
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                detail = resp.text.strip()
+                try:
+                    detail = resp.json()
+                except ValueError:
+                    pass
+                raise ValueError(
+                    f"Fanar API a rejeté la requête ({resp.status_code}). "
+                    f"Vérifiez FANAR_MODEL_ID (ex: Fanar, Fanar-C-2-27B). Détail: {detail}"
+                )
             data = resp.json()
             text = data["choices"][0]["message"]["content"]
             return self._parse_response(text)
@@ -718,6 +730,7 @@ AVAILABLE_MODELS = {
         "langues": ["ar"],
         "description": "LLM arabe du Qatar, dialectes du Golfe",
         "env_required": ["FANAR_API_KEY"],
+        "model_id": "Fanar",
     },
     "acegpt": {
         "provider": "acegpt",
