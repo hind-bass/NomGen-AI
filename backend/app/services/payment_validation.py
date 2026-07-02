@@ -1,7 +1,3 @@
-"""
-Validation des formulaires de paiement / réservation.
-Ne stocke jamais le numéro complet de carte ni le CVC.
-"""
 import re
 from datetime import datetime
 

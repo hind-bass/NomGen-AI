@@ -133,7 +133,7 @@ async def root():
             "admin_training_stats": "GET /api/admin/training/stats",
             "admin_training_export": "GET /api/admin/training/export",
             "admin_training_sync": "POST /api/admin/training/sync-datasets",
-            "local_llm_models": "ollama-llama31 | ollama-qwen25 | ollama-mistral",
+            "local_llm_models": "ollama-nomgen-qwen25 | ollama-llama31 | ollama-qwen25 | ollama-mistral",
             "feedback_like": "POST /feedback/like",
             "feedback_dislike": "POST /feedback/dislike",
             "feedback_stats": "GET /feedback/stats",

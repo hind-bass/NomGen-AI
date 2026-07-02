@@ -1,12 +1,12 @@
 """
 Routes d'administration.
-POST   /api/admin/users               — créer un utilisateur
-GET    /api/admin/users               — lister les utilisateurs
-PATCH  /api/admin/users/:id           — modifier un utilisateur (rôle, actif)
-DELETE /api/admin/users/:id           — supprimer un utilisateur
-GET    /api/admin/suggestions         — lister les suggestions avec filtrage
-POST   /api/admin/suggestions/add     — ajouter une suggestion directe (vérification doublon)
-PATCH  /api/admin/suggestions/:id     — valider/rejeter une suggestion
+POST   /api/admin/users               - créer un utilisateur
+GET    /api/admin/users               - lister les utilisateurs
+PATCH  /api/admin/users/:id           - modifier un utilisateur (rôle, actif)
+DELETE /api/admin/users/:id           - supprimer un utilisateur
+GET    /api/admin/suggestions         - lister les suggestions avec filtrage
+POST   /api/admin/suggestions/add     - ajouter une suggestion directe (vérification doublon)
+PATCH  /api/admin/suggestions/:id     - valider/rejeter une suggestion
 """
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -31,8 +31,7 @@ router = APIRouter(prefix="/api/admin", tags=["Administration"])
 DATA_DIR = Path(__file__).parent.parent.parent.parent / "data"
 
 
-# ─── Schémas ─────────────────────────────────────────────────────────────────
-
+# Schémas 
 class UserCreate(BaseModel):
     email: str
     password: str
@@ -97,7 +96,7 @@ class ReservationUpdate(BaseModel):
     days: Optional[int] = 30            # utilisé avec action "extend"
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+# Helpers 
 
 def _dataset_path(langue: str, secteur: str, type_nom: str) -> Path:
     """Calcule le chemin du fichier .txt cible selon langue/secteur/type."""
@@ -184,8 +183,7 @@ def _reservation_to_admin_read(reservation: Reservation, user_email: str) -> Res
     )
 
 
-# ─── Endpoints : Gestion des utilisateurs ─────────────────────────────────────
-
+# Endpoints : Gestion des utilisateurs
 @router.post("/users", status_code=status.HTTP_201_CREATED, response_model=UserRead)
 def create_user(
     req: UserCreate,
@@ -317,7 +315,7 @@ def delete_user(
     session.commit()
 
 
-# ─── Endpoints : Gestion des suggestions ──────────────────────────────────────
+# Endpoints : Gestion des suggestions
 
 @router.get("/suggestions")
 def list_all_suggestions(
@@ -470,7 +468,7 @@ def review_suggestion(
     }
 
 
-# ─── Endpoints : Gestion des réservations ─────────────────────────────────────
+# Endpoints : Gestion des réservations 
 
 @router.get("/reservations/stats", response_model=ReservationStats)
 def reservation_stats(
@@ -590,8 +588,7 @@ def delete_reservation_admin(
     session.commit()
 
 
-# ─── Endpoints : Datasets & Fine-tuning ───────────────────────────────────────
-
+# Endpoints : Datasets & Fine-tuning 
 @router.get("/training/stats")
 def training_stats(
     admin: User = Depends(get_current_admin),

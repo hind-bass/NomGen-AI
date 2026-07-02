@@ -24,7 +24,7 @@ from app.services.generation_store_service import save_generated_names
 router = APIRouter()
 
 
-# ─── Schémas ─────────────────────────────────────────────────────────────────
+# Schémas 
 
 class LLMGenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=5, description="Description du projet")
@@ -53,7 +53,7 @@ class LLMGenerateResponse(BaseModel):
     duree_ms: float
 
 
-# ─── Helper : extraire user_id optionnel depuis le JWT ───────────────────────
+#  Helper : extraire user_id optionnel depuis le JWT 
 
 def _get_optional_user_id(request: Request) -> Optional[int]:
     auth_header = request.headers.get("Authorization", "")
@@ -66,7 +66,7 @@ def _get_optional_user_id(request: Request) -> Optional[int]:
     return None
 
 
-# ─── Endpoint principal ───────────────────────────────────────────────────────
+#  Endpoint principal 
 
 @router.post("/generate-llm", response_model=LLMGenerateResponse)
 async def generate_names_llm(
@@ -101,11 +101,17 @@ async def generate_names_llm(
             style=req.secteur,
             temperature=req.temperature,
         )
-    except httpx.TimeoutException as e:
+    except httpx.TimeoutException:
+        hint = ""
+        if "nomgen" in req.model_key.lower():
+            hint = (
+                " Le modèle fine-tuné est lourd (~6 Go) : lancez « ollama run nomgen-qwen25 » "
+                "pour le précharger, puis réessayez (1ère génération souvent 2–5 min sur CPU)."
+            )
         raise HTTPException(
             status_code=504,
-            detail=f"Le LLM '{req.model_key}' a mis trop de temps à répondre (timeout). "
-                   f"Réessayez ou choisissez un modèle plus rapide."
+            detail=f"Le LLM '{req.model_key}' a mis trop de temps à répondre (timeout).{hint} "
+                   f"Réessayez ou choisissez un modèle plus léger (qwen2.5, mistral)."
         )
     except Exception as e:
         msg = str(e).strip() or type(e).__name__
@@ -173,7 +179,7 @@ def list_llm_models(langue: Optional[str] = None):
     return {"models": models, "total": len(models)}
 
 
-# ─── Endpoint simplifié Mode B (Ollama direct) ────────────────────────────────
+#  Endpoint simplifié Mode B (Ollama direct) 
 
 class SimpleLLMRequest(BaseModel):
     prompt: str = Field(..., min_length=5)
@@ -245,7 +251,7 @@ async def generate_names_ollama(
     )
 
 
-# ─── Endpoint: Modèles recommandés ─────────────────────────────────────────────
+# Endpoint: Modèles recommandés
 
 @router.get("/models/recommended")
 def get_recommended_llm_models(langue: Optional[str] = None):

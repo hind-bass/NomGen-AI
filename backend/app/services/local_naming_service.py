@@ -26,6 +26,12 @@ LOCAL_MODELS = {
         "langues": ["fr", "ar"],
         "pull_cmd": "ollama pull qwen2.5",
     },
+    "nomgen-qwen25": {
+        "ollama_id": "nomgen-qwen25",
+        "label": "NomGen Qwen 2.5 (fine-tuné)",
+        "langues": ["fr", "ar"],
+        "pull_cmd": "ollama create nomgen-qwen25 -f Modelfile",
+    },
     "mistral": {
         "ollama_id": "mistral",
         "label": "Mistral 7B",

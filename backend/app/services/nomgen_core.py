@@ -1,14 +1,3 @@
-"""
-Service principal NomGen AI — v4.0
-Jour 2 : chargement DYNAMIQUE du modèle selon (langue, secteur).
-
-Hiérarchie de chargement :
-  1. model_{langue}_{secteur}_marque.pt   (ex: model_fr_tech_marque.pt)
-  2. model_{langue}_{secteur}.pt          (ex: model_fr_tech.pt)
-  3. model_{langue}.pt                    (modèle générique — fallback)
-
-Les vocabs sont partagés par langue (un seul vocab_fr.json et vocab_ar.json).
-"""
 import torch
 import torch.nn.functional as F
 import json

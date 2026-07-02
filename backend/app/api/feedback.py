@@ -1,5 +1,5 @@
 """
-Routes API — Feedback (likes / dislikes / statistiques).
+Routes API  Feedback (likes / dislikes / statistiques).
 
 Endpoints :
   POST /feedback/like
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/feedback", tags=["Feedback"])
 
 
 def _get_optional_user_id(request: Request) -> Optional[int]:
-    """Extrait user_id du JWT si présent (vote optionnellement authentifié)."""
+    """Extrait user_id du JWT si présent """
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         return None

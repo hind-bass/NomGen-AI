@@ -1,8 +1,3 @@
-"""
-Router de génération — mis à jour Jour 1.
-Nouveau : enregistrement de chaque génération dans l'historique DB.
-L'auth est optionnelle : les non-connectés peuvent générer mais sans historique.
-"""
 import re
 import time
 from typing import Optional

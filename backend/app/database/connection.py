@@ -46,6 +46,6 @@ def create_db_and_tables() -> None:
 
 
 def get_session():
-    """Dépendance FastAPI — fournit une session DB par requête."""
+    """Dépendance FastAPI fournit une session DB par requête."""
     with Session(engine) as session:
         yield session

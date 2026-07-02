@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Script de création / initialisation de la base SQLite.
-
-Usage (depuis le dossier backend/) :
-    python -m app.database.init_db
-    python -m app.database.init_db --seed   # insère des données d'exemple
-"""
 import argparse
 from datetime import datetime, timedelta
 

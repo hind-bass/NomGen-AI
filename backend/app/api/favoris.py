@@ -1,5 +1,5 @@
 """
-Routes API — Favoris (table `favoris`).
+Routes API Favoris (table `favoris`).
 
 Endpoints :
   POST /favorites/add
@@ -48,7 +48,7 @@ def list_favoris(
     request: Request,
     session: Session = Depends(get_session),
 ):
-    """Liste les favoris (filtrés par utilisateur si JWT fourni)."""
+    """Liste les favoris"""
     service = FeedbackService(session)
     user_id = _get_optional_user_id(request)
     favoris = service.list_favoris(user_id=user_id)
